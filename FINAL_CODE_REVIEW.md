@@ -171,17 +171,17 @@ This review provides a strict, evidence-based evaluation of the Java 17 + Spring
 [INFO]  T E S T S
 [INFO] -------------------------------------------------------
 [INFO] Running com.cynbit.remediation.config.RateLimiterConcurrencyTest
-[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.611 s
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.584 s
 [INFO] Running com.cynbit.remediation.controller.AuthControllerTest
-[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.853 s
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.355 s
 [INFO] Running com.cynbit.remediation.controller.CareerControllerTest
-[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.123 s
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.119 s
 [INFO] Running com.cynbit.remediation.controller.InquiryControllerTest
-[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.046 s
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.043 s
 [INFO] Running com.cynbit.remediation.security.JwtTokenProviderTest
-[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.028 s
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.027 s
 [INFO] Running com.cynbit.remediation.service.DocumentReferenceServiceTest
-[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.167 s
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.179 s
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -190,8 +190,8 @@ This review provides a strict, evidence-based evaluation of the Java 17 + Spring
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time:  16.327 s
-[INFO] Finished at: 2026-11-01T12:44:05+05:30
+[INFO] Total time:  15.663 s
+[INFO] Finished at: 2026-11-01T12:59:30+05:30
 [INFO] ------------------------------------------------------------------------
 ```
 
@@ -203,8 +203,8 @@ This review provides a strict, evidence-based evaluation of the Java 17 + Spring
 [INFO] Replacing main artifact with repackaged archive.
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
-[INFO] Total time:  4.629 s
-[INFO] Finished at: 2026-11-01T12:45:46+05:30
+[INFO] Total time:  5.417 s
+[INFO] Finished at: 2026-11-01T12:59:49+05:30
 [INFO] ------------------------------------------------------------------------
 ```
 - **Executable Output**: `backend-remediation-service/target/cynbit-backend-remediation-1.0.0.jar` (Self-contained executable Spring Boot archive with embedded Tomcat).
