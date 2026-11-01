@@ -1,0 +1,31 @@
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Access-Control-Allow-Origin: *
+Age: 233854
+Cache-Control: public, max-age=0, must-revalidate
+Content-Disposition: inline
+Content-Length: 100498
+Content-Type: text/html; charset=utf-8
+Date: Sun, 01 Nov 2026 06:09:46 GMT
+Etag: "babdce9795e4ef3d84461090987852d3"
+Server: Vercel
+Strict-Transport-Security: max-age=63072000
+Vary: rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+X-Matched-Path: /
+X-Nextjs-Prerender: 1
+X-Nextjs-Stale-Time: 300
+X-Vercel-Cache: HIT
+X-Vercel-Id: bom1::6b94f-1793513386038-c8278c51969d
+
+TLS Details:
+- Host: www.cynbit.in:443 (IPv4: 64.29.17.65, 216.198.79.65)
+- Common Name (CN): www.cynbit.in
+- Issuer: Let's Encrypt (CN=YR2)
+- Serial: 06:1c:33:93:16:4f:bf:06:e5:bc:de:09:7f:36:df:52:0b:d4
+- Valid Until: 2026-12-24 04:47:43 GMT
+
+Measured Timings:
+- Total Time: 0.464s
+- TCP Connect: 0.059s (59ms)
+- TLS AppConnect: 0.135s (135ms)
+- TTFB (StartTransfer): 0.464s (464ms)

@@ -1,0 +1,36 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+  error:
+    include-message: always
+    include-binding-errors: always
+
+spring:
+  application:
+    name: cynbit-backend-remediation
+  threads:
+    virtual:
+      enabled: true
+
+# Security & JWT Configuration
+app:
+  security:
+    jwt:
+      secret: "cynbit-audit-super-secret-hmac-sha256-key-with-sufficient-entropy-for-enterprise-security-2026"
+      expiration-ms: 28800000 # 8 hours
+      cookie-name: cynbit_session
+  cors:
+    allowed-origins:
+      - "https://www.cynbit.in"
+      - "https://portal.cynbit.in"
+      - "http://localhost:3000"
+  rate-limiting:
+    inquiry-limit-per-5-minutes: 10
+    career-limit-per-15-minutes: 5
+
+logging:
+  level:
+    root: INFO
+    com.cynbit.remediation: DEBUG
+    org.springframework.security: INFO
