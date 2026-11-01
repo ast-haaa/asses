@@ -132,21 +132,60 @@ The reference service in `backend-remediation-service/` demonstrates an enterpri
 - **Maven**: Apache Maven 3.8+ installed (`mvn -version`)
 
 ### Compilation & Running Tests
-From the root workspace directory:
+From the workspace directory:
 
 ```powershell
 # Navigate to the reference remediation service
 cd backend-remediation-service
 
-# Run all unit and integration tests
-mvn test
+# Run all 26 unit, security, and concurrency tests
+mvn clean test
 
-# Package the application JAR
+# Package the standalone executable JAR
 mvn package -DskipTests
+```
 
-# Run the Spring Boot application on port 8080
+### Running the Application
+
+Because the service enforces strict secrets externalization without hardcoded fallbacks, `JWT_SECRET` must be supplied via an environment variable with at least 32 bytes (256 bits) of entropy:
+
+**Windows PowerShell**:
+```powershell
+$env:JWT_SECRET = "cynbit-enterprise-secret-key-with-sufficient-entropy-for-hmac-sha256-production-2026"
 java -jar target/cynbit-backend-remediation-1.0.0.jar
 ```
+
+**Linux / macOS (Bash)**:
+```bash
+export JWT_SECRET="cynbit-enterprise-secret-key-with-sufficient-entropy-for-hmac-sha256-production-2026"
+java -jar target/cynbit-backend-remediation-1.0.0.jar
+```
+
+### Frontend CSRF Integration Guide
+1. Upon initial load, make a `GET` request to any endpoint (e.g. `GET /api/v1/portal/auth/health`).
+2. Spring Security's `CookieCsrfTokenRepository` automatically emits an `XSRF-TOKEN` cookie (`HttpOnly=false`, `Path=/`).
+3. For state-changing requests (`POST /api/v1/portal/documents/**`), read the cookie value in JavaScript:
+   ```javascript
+   const xsrfToken = document.cookie
+     .split('; ')
+     .find(row => row.startsWith('XSRF-TOKEN='))
+     ?.split('=')[1];
+
+   await fetch('/api/v1/portal/documents', {
+     method: 'POST',
+     credentials: 'include', // sends cynbit_session HttpOnly cookie
+     headers: {
+       'Content-Type': 'application/json',
+       'X-XSRF-TOKEN': xsrfToken
+     },
+     body: JSON.stringify(documentPayload)
+   });
+   ```
+
+### Architectural Disclaimers & Production Migration
+- **Persistence Status**: The application currently runs using thread-safe in-memory collections (`ConcurrentHashMap`) for standalone evaluation. It does NOT maintain a live connection to a running MySQL instance by default. A complete production-ready DDL script is provided in [`schema.sql`](backend-remediation-service/src/main/resources/schema.sql) and can be activated via `--spring.profiles.active=mysql` once a MySQL 8.0+ server is provisioned.
+- **Token Blacklist Scope**: Token revocation operates via an in-memory `TokenBlacklistService`. Blacklisted tokens are evicted naturally at expiration or cleared upon application restart. In a distributed multi-instance deployment, replace this with a shared Redis store with TTL eviction.
+- **Rate Limiter Scope**: In-memory token buckets track client IPs per JVM instance. For clustered deployments behind load balancers, replace in-memory buckets with Redis (`Bucket4j-redis` or `Redisson`).
 
 ### Default Test Credentials (Configured in AuthService)
 - **Super Admin**: `super.admin@cynbit.in` / `Admin@Cynbit#2026` (`ROLE_SUPER_ADMIN`)
