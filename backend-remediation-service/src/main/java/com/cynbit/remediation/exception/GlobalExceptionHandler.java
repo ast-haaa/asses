@@ -56,13 +56,18 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(RateLimitExceededException.class)
-    public ProblemDetail handleRateLimitExceeded(RateLimitExceededException ex, HttpServletRequest request) {
+    public org.springframework.http.ResponseEntity<ProblemDetail> handleRateLimitExceeded(
+            RateLimitExceededException ex, HttpServletRequest request) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage());
         problem.setTitle("Rate Limit Exceeded");
         problem.setType(URI.create("https://api.cynbit.in/errors/rate-limit-exceeded"));
         problem.setInstance(URI.create(request.getRequestURI()));
+        problem.setProperty("retryAfterSeconds", ex.getRetryAfterSeconds());
         problem.setProperty("timestamp", Instant.now());
-        return problem;
+
+        return org.springframework.http.ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(org.springframework.http.HttpHeaders.RETRY_AFTER, String.valueOf(ex.getRetryAfterSeconds()))
+                .body(problem);
     }
 
     @ExceptionHandler(AuthenticationException.class)

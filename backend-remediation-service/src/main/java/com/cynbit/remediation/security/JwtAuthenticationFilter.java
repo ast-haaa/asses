@@ -17,6 +17,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Collections;
 
+/**
+ * Validates JWT tokens provided via HttpOnly cookies (browser SPA) or Authorization Bearer headers (API clients).
+ * Ensures any token validation failure or exception immediately clears the security context.
+ */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -36,32 +40,44 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
-        String token = resolveToken(request);
+        try {
+            String token = resolveToken(request);
 
-        if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
-            String username = jwtTokenProvider.extractUsername(token);
-            String role = jwtTokenProvider.extractRole(token);
-            String userId = jwtTokenProvider.extractUserId(token);
+            if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
+                String username = jwtTokenProvider.extractUsername(token);
+                String role = jwtTokenProvider.extractRole(token);
+                String userId = jwtTokenProvider.extractUserId(token);
 
-            SimpleGrantedAuthority authority = new SimpleGrantedAuthority(role);
-            SecurityUser principal = new SecurityUser(userId, username, "", UserRole.valueOf(role));
+                if (StringUtils.hasText(username) && StringUtils.hasText(role) && StringUtils.hasText(userId)) {
+                    SimpleGrantedAuthority authority = new SimpleGrantedAuthority(role);
+                    SecurityUser principal = new SecurityUser(userId, username, "", UserRole.valueOf(role));
 
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(principal, null, Collections.singletonList(authority));
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(principal, null, Collections.singletonList(authority));
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                } else {
+                    SecurityContextHolder.clearContext();
+                }
+            } else {
+                SecurityContextHolder.clearContext();
+            }
+        } catch (Exception ex) {
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);
     }
 
     private String resolveToken(HttpServletRequest request) {
+        // 1. Check HTTP Authorization header (Bearer token)
         String bearerToken = request.getHeader("Authorization");
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
         }
 
+        // 2. Check HttpOnly session cookie
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
                 if (cookieName.equals(cookie.getName()) && StringUtils.hasText(cookie.getValue())) {
@@ -73,4 +89,3 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return null;
     }
 }
-

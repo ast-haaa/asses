@@ -3,22 +3,24 @@ server:
   servlet:
     context-path: /
   error:
-    include-message: always
-    include-binding-errors: always
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
 
 spring:
   application:
     name: cynbit-backend-remediation
-  threads:
-    virtual:
-      enabled: true
+  profiles:
+    default: in-memory
 
 # Security & JWT Configuration
 app:
   security:
     jwt:
-      secret: ${JWT_SECRET:cynbit-audit-super-secret-hmac-sha256-key-with-sufficient-entropy-for-enterprise-security-2026}
+      secret: ${JWT_SECRET}
       expiration-ms: ${JWT_EXPIRATION_MS:28800000} # 8 hours default
+      issuer: ${JWT_ISSUER:cynbit.in}
       cookie-name: ${JWT_COOKIE_NAME:cynbit_session}
   cors:
     allowed-origins:
@@ -34,4 +36,21 @@ logging:
     root: INFO
     com.cynbit.remediation: DEBUG
     org.springframework.security: INFO
+
+---
+# MySQL Profile Configuration (Activated via --spring.profiles.active=mysql)
+spring:
+  config:
+    activate:
+      on-profile: mysql
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/cynbit_remediation_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+
 

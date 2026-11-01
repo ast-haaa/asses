@@ -9,7 +9,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -25,7 +29,7 @@ class CareerControllerTest {
     private ObjectMapper objectMapper;
 
     @Test
-    @DisplayName("Should submit application and reject duplicate submissions with 409 Conflict")
+    @DisplayName("Should submit application, retrieve status, and reject duplicate submissions with 409 Conflict")
     void shouldHandleApplicationAndRejectDuplicates() throws Exception {
         CareerApplicationRequest request = new CareerApplicationRequest();
         request.setFullName("Priya Sharma");
@@ -44,13 +48,23 @@ class CareerControllerTest {
         request.setAgreedToTerms(true);
 
         // First attempt: 201 Created
-        mockMvc.perform(post("/api/v1/careers/backend-developer-intern/applications")
+        MvcResult result = mockMvc.perform(post("/api/v1/careers/backend-developer-intern/applications")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
                 .andExpect(jsonPath("$.data.applicationId").exists())
-                .andExpect(jsonPath("$.data.trackingUrl").exists());
+                .andExpect(jsonPath("$.data.trackingUrl").exists())
+                .andReturn();
+
+        String appId = objectMapper.readTree(result.getResponse().getContentAsString())
+                .get("data").get("applicationId").asText();
+
+        // Verify status retrieval via GET /api/v1/careers/{jobId}/applications/{applicationId}
+        mockMvc.perform(get("/api/v1/careers/backend-developer-intern/applications/" + appId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.applicationId").value(appId))
+                .andExpect(jsonPath("$.data.email").value("priya.sharma.test@cynbit-candidate.com"));
 
         // Duplicate attempt: 409 Conflict with trackingUrl property
         mockMvc.perform(post("/api/v1/careers/backend-developer-intern/applications")
@@ -59,6 +73,15 @@ class CareerControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.title").value("Duplicate Application"))
                 .andExpect(jsonPath("$.trackingUrl").exists());
+    }
+
+    @Test
+    @DisplayName("Should restrict unauthorized HTTP methods on career endpoints with 401 Unauthorized")
+    void shouldBlockUnauthorizedHttpMethodsOnCareerEndpoints() throws Exception {
+        // DELETE on career route is not publicly permitted in SecurityConfig and requires authentication
+        mockMvc.perform(delete("/api/v1/careers/backend-developer-intern/applications").with(csrf()))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.title").value("Unauthorized"));
     }
 }
 
