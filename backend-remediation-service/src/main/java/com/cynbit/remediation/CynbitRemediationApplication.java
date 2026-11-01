@@ -13,3 +13,4 @@ public class CynbitRemediationApplication {
         SpringApplication.run(CynbitRemediationApplication.class, args);
     }
 }
+

@@ -181,3 +181,4 @@ Generates and logs an authoritative HR document record. Requires `ROLE_HR_ADMIN`
 Retrieves a logged document by its cryptographic reference number.
 - Requires active authenticated session.
 - Returns `404 Not Found` if the reference does not exist.
+

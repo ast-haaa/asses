@@ -75,3 +75,4 @@ public class InquiryRequest {
         this.message = message;
     }
 }
+

@@ -63,3 +63,4 @@ class InquiryControllerTest {
                 .andExpect(jsonPath("$.errors.message").exists());
     }
 }
+

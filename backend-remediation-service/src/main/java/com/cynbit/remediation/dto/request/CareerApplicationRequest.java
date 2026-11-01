@@ -24,7 +24,7 @@ public class CareerApplicationRequest {
     @Pattern(regexp = "^\\+?[0-9]{10,15}$", message = "Phone number must be between 10 and 15 digits, optionally prefixed with +")
     private String phone;
 
-    @Pattern(regexp = "^\\+?[0-9]{10,15}$", message = "WhatsApp number must be valid if provided")
+    @Pattern(regexp = "^(\\+?[0-9]{10,15})?$", message = "WhatsApp number must be valid if provided")
     private String whatsapp;
 
     @NotBlank(message = "Date of birth is required")
@@ -49,7 +49,7 @@ public class CareerApplicationRequest {
     @Size(max = 500, message = "Permanent address cannot exceed 500 characters")
     private String permanentAddress;
 
-    @Pattern(regexp = "^https?://.*$", message = "Portfolio URL must be a valid HTTP/HTTPS URL")
+    @Pattern(regexp = "^(https?://.*)?$", message = "Portfolio URL must be a valid HTTP/HTTPS URL")
     private String portfolioUrl;
 
     @NotBlank(message = "LinkedIn URL is required")
@@ -199,3 +199,4 @@ public class CareerApplicationRequest {
         this.educationHistory = educationHistory;
     }
 }
+

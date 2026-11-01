@@ -79,7 +79,22 @@ public class JwtTokenProvider {
                 return false;
             }
             long expTime = expNumber.longValue() * 1000;
-            return System.currentTimeMillis() < expTime;
+            if (System.currentTimeMillis() >= expTime) {
+                return false;
+            }
+
+            String sub = (String) claims.get("sub");
+            String role = (String) claims.get("role");
+            if (sub == null || sub.isBlank() || role == null || role.isBlank()) {
+                return false;
+            }
+            try {
+                UserRole.valueOf(role);
+            } catch (IllegalArgumentException ex) {
+                return false;
+            }
+
+            return true;
         } catch (Exception e) {
             return false;
         }
@@ -132,3 +147,4 @@ public class JwtTokenProvider {
         return java.security.MessageDigest.isEqual(aBytes, bBytes);
     }
 }
+

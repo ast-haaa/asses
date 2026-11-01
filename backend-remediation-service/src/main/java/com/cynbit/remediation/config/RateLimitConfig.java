@@ -120,11 +120,11 @@ public class RateLimitConfig implements WebMvcConfigurer {
             long last = lastRefillTimestamp.get();
             long elapsed = now - last;
 
-            if (elapsed > refillIntervalMs) {
+            if (elapsed >= refillIntervalMs) {
                 int tokensToAdd = (int) (elapsed / refillIntervalMs);
                 if (tokensToAdd > 0) {
                     tokens.updateAndGet(current -> Math.min(capacity, current + tokensToAdd));
-                    lastRefillTimestamp.set(now);
+                    lastRefillTimestamp.addAndGet((long) tokensToAdd * refillIntervalMs);
                 }
             }
         }

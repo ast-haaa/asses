@@ -27,3 +27,4 @@ public class InquiryController {
                 .body(ApiResponse.success("Inquiry successfully received.", Map.of("inquiryId", inquiryId)));
     }
 }
+

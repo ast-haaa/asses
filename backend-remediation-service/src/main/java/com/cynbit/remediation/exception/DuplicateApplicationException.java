@@ -12,3 +12,4 @@ public class DuplicateApplicationException extends RuntimeException {
         return trackingUrl;
     }
 }
+

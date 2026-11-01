@@ -69,3 +69,4 @@ The application relies on Next.js Server Actions over HTTP POST rather than conv
 | `adminBatchUpdateSubmissionStatus`| `70d909e95734c649...` | `.../submissions` | `submissionIds[]`, `status` | `{ success: boolean }` |
 | `fetchDocumentByRef` | `40244e9a6ff014cf...` | `.../offer-letter` | `referenceId` | Document payload metadata |
 | `logDocumentToDB` | `78b2e843c9bec963...` | `.../offer-letter` | `docType`, `refNumber`, `candidateName`, `fullData` | `{ success: boolean }` |
+

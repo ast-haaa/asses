@@ -168,3 +168,4 @@ java -jar target/cynbit-backend-remediation-1.0.0.jar
 ## 9. Ethical Audit & Legal Disclaimer
 
 This technical audit was conducted strictly as an authorized, passive, read-only technical assessment. No attempts were made to breach authentication, manipulate live database records, fuzz endpoints, or disrupt production services. All observations reflect publicly accessible HTTP headers, client JavaScript chunks, and response bodies served directly to standard web clients.
+

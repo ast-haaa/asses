@@ -70,3 +70,4 @@ public class SecurityUser implements UserDetails {
         return enabled;
     }
 }
+

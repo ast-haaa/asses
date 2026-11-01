@@ -142,3 +142,4 @@ The following areas cannot be definitively proven without server-side codebase a
   - This is classified as a **configuration observation**, *not* a confirmed exploitable vulnerability.
   - Because `Access-Control-Allow-Credentials: true` is not present, third-party sites cannot read authenticated session data across origins via standard browser fetch.
   - However, returning wildcard CORS on top-level HTML documents represents an overly permissive edge header policy that diverges from the principle of least privilege.
+

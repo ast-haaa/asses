@@ -87,3 +87,4 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Authentication service healthy.", Map.of("status", "UP")));
     }
 }
+

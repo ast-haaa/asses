@@ -85,8 +85,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/inquiries/**").permitAll()
                 .requestMatchers("/api/v1/careers/**").permitAll()
 
-                // Portal Authentication Endpoint
-                .requestMatchers(HttpMethod.POST, "/api/v1/portal/auth/login").permitAll()
+                // Portal Authentication Endpoints
+                .requestMatchers(HttpMethod.POST, "/api/v1/portal/auth/login", "/api/v1/portal/auth/logout").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/portal/auth/health").permitAll()
 
                 // Protected Administrative Endpoints (RBAC)

@@ -81,3 +81,4 @@ public class DocumentResponse {
         this.details = details;
     }
 }
+

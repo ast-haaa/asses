@@ -99,3 +99,4 @@ public class EducationEntry {
         this.status = status;
     }
 }
+

@@ -90,3 +90,4 @@ public class ApplicationStatusResponse {
         this.submittedAt = submittedAt;
     }
 }
+

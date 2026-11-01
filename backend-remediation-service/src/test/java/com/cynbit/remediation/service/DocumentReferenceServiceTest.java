@@ -63,3 +63,4 @@ class DocumentReferenceServiceTest {
         assertNotEquals(hash1, hashTampered);
     }
 }
+

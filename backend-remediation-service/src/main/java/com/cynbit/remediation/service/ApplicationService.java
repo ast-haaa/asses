@@ -76,10 +76,22 @@ public class ApplicationService {
     }
 
     public DocumentResponse logDocument(DocumentLogRequest request) {
-        String refNumber = documentReferenceService.generateReferenceNumber(
-                request.getDocumentType(),
-                request.getEmploymentType()
-        );
+        String refNumber = null;
+        int attempts = 0;
+        while (attempts < 5) {
+            String candidateRef = documentReferenceService.generateReferenceNumber(
+                    request.getDocumentType(),
+                    request.getEmploymentType()
+            );
+            if (!documentStore.containsKey(candidateRef)) {
+                refNumber = candidateRef;
+                break;
+            }
+            attempts++;
+        }
+        if (refNumber == null) {
+            throw new IllegalStateException("Failed to generate a unique document reference after multiple attempts");
+        }
 
         Map<String, Object> details = new HashMap<>();
         details.put("joiningDate", request.getJoiningDate());
@@ -152,3 +164,4 @@ public class ApplicationService {
         public Instant getTimestamp() { return timestamp; }
     }
 }
+

@@ -58,3 +58,4 @@ Empirical tracing of the root apex domain revealed a multi-step redirection sequ
 ### 3.3 HTML Document Payload Sizing
 - The homepage payload for `www.cynbit.in` is $100,498\text{ bytes}$ ($\approx 98.1\text{ KB}$), reflecting inline React Server Component serialized state chunks (`self.__next_f.push(...)`) alongside structured JSON-LD schema metadata.
 - Pre-gzipped or brotli-compressed transfer over HTTP/2 or HTTP/3 mitigates wire weight during typical browser interactions.
+

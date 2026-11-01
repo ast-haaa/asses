@@ -61,3 +61,4 @@ class CareerControllerTest {
                 .andExpect(jsonPath("$.trackingUrl").exists());
     }
 }
+

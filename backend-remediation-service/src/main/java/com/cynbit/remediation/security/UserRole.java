@@ -6,3 +6,4 @@ public enum UserRole {
     ROLE_MENTOR,
     ROLE_INTERN
 }
+

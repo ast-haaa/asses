@@ -38,3 +38,4 @@ public class CareerController {
         return ResponseEntity.ok(ApiResponse.success("Application details retrieved.", response));
     }
 }
+
