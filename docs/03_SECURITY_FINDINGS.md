@@ -33,28 +33,20 @@ Transfer-Encoding: chunked
 
 <!DOCTYPE html>...
 <script>self.__next_f.push([1,"...
-Offer Letter Generator... Generate official offer letters for new hires with custom terms and salary details.
-Bitelevate Offer Letter... Generate selection letters for candidates joining the Bitelevate Training Program.
-Joining Kit Generator... Create comprehensive onboarding documents including NDA and Terms of Employment.
-Experience Letter... Create professional experience certificates for departing team members.
-Certificate Generator... Issue official internship completion certificates to Bitelevate interns.
-Intern Management... Manage interns, assign daily tasks, and review EOD submissions for Bitelevate.
-Central Document Log... A secure, permanent record of all generated HR documents.
-href: \"/portal/dashboard/offer-letter\"
-href: \"/portal/dashboard/bitelevate-offer\"
-href: \"/portal/dashboard/joining-kit\"
-href: \"/portal/dashboard/experience-letter\"
-href: \"/portal/dashboard/certificates\"
-href: \"/portal/dashboard/interns\"
-href: \"/portal/dashboard/interns/submissions\"
+[Internal Tool Title A]... [Sanitized operational description A]
+[Internal Tool Title B]... [Sanitized operational description B]
+[Internal Document Log Section]... [Sanitized log description]
+href: \"[REDACTED_INTERNAL_ROUTE_A]\"
+href: \"[REDACTED_INTERNAL_ROUTE_B]\"
 ..."])</script>
 7:E{"digest":"NEXT_REDIRECT;replace;/;307;"}
 ```
 
 #### Technical Explanation & Boundary
-- **What is Occurring**: In Next.js App Router, if a Server Component executes a redirect (e.g., calling `redirect('/')`) within the component render function rather than before rendering in edge `middleware.ts`, Next.js renders the component tree into an RSC payload before appending the redirect digest.
-- **Scope Boundary**: The exposed content consists **strictly of UI template strings, component titles, tool descriptions, and route paths**. No user personal identifiable information (PII), database connection strings, secret keys, or live records were observed in this payload.
-- **Impact**: Enables unauthenticated reconnaissance of internal tools and private administration URLs.
+- **What is Occurring**: The captured HTTP response to an unauthenticated request to `/dashboard` returned an HTTP 307 redirect status code alongside a chunk-encoded body containing a serialized React Server Component (RSC) flight payload with UI layout strings, followed by a client-side redirect instruction (`NEXT_REDIRECT`).
+- **Scope Boundary**: The exposed content consists **strictly of UI template strings and layout structures**. No user personal identifiable information (PII), database connection strings, secret keys, or live records were observed in this payload.
+- **Definitive Assessment Limit**: This observation documents the observed wire response. It does not infer or prove internal server-side implementation details, such as the specific code location of the redirect call or edge middleware configuration.
+- **Impact**: Enables unauthenticated observation of internal tool titles and layout structures.
 
 ---
 
@@ -112,16 +104,16 @@ An enterprise document lifecycle requires:
 
 The HTTP response headers were verified independently for `www.cynbit.in` and `portal.cynbit.in`:
 
-| Security Header | Status on `www.cynbit.in` | Status on `portal.cynbit.in` | Standard Best-Practice Requirement |
-| :--- | :--- | :--- | :--- |
-| `Strict-Transport-Security` | **Present** (`max-age=63072000`) | **Present** (`max-age=63072000`) | Enforces HTTPS strictly for 2 years |
-| `Content-Security-Policy` | **Absent** | **Absent** | Restricts sources of scripts, styles, objects |
-| `X-Frame-Options` | **Absent** | **Absent** | Defends against framing / Clickjacking |
-| `X-Content-Type-Options` | **Absent** | **Absent** | Prevents MIME-type sniffing (`nosniff`) |
-| `Referrer-Policy` | **Absent** | **Absent** | Controls referrer header leakage (`strict-origin-when-cross-origin`) |
-| `Permissions-Policy` | **Absent** | **Absent** | Restricts browser features (geolocation, camera, mic) |
+| Security Header | Status on `www.cynbit.in` | Status on `portal.cynbit.in` | Standard Best-Practice Requirement | Technical Interpretation & Boundary |
+| :--- | :--- | :--- | :--- | :--- |
+| `Strict-Transport-Security` | **Present** (`max-age=63072000`) | **Present** (`max-age=63072000`) | Enforces HTTPS strictly for 2 years | Actively enforced across both subdomains. |
+| `Content-Security-Policy` | **Absent** | **Absent** | Restricts sources of scripts, styles, objects | Defense-in-depth header absent. Does not prove all script or frame sources are unrestricted in practice. |
+| `X-Frame-Options` | **Absent** | **Absent** | Defends against framing / Clickjacking | Explicit anti-framing header absent. Indicates missing defense-in-depth, but does not alone prove framing is exploitable in all modern browser contexts. |
+| `X-Content-Type-Options` | **Absent** | **Absent** | Prevents MIME-type sniffing (`nosniff`) | Defense-in-depth header absent. |
+| `Referrer-Policy` | **Absent** | **Absent** | Controls referrer header leakage | Default browser referrer behavior applies. |
+| `Permissions-Policy` | **Absent** | **Absent** | Restricts browser features (geolocation, camera, mic) | Explicit feature restrictions not declared via header; browser defaults apply. |
 
-- **Impact**: **Low to Medium (Defense-in-Depth Defect)**. Leaves the internal portal and public site vulnerable to UI redressing (clickjacking) if rendered inside third-party `<iframe>` elements.
+- **Impact**: **Low (Defense-in-Depth Configuration Finding)**. The absence of these headers represents an opportunity to harden edge defense-in-depth. In accordance with strict audit integrity, missing headers indicate the lack of an explicit HTTP-level security policy declaration; they do not alone demonstrate active exploitability.
 
 ---
 
@@ -165,6 +157,6 @@ The following areas cannot be definitively proven without server-side codebase a
   `Access-Control-Allow-Origin: *` is returned on root HTML responses on `https://www.cynbit.in/` and `https://portal.cynbit.in/`.
 - **Context & Boundary**:
   - This is classified as a **configuration observation**, *not* a confirmed exploitable vulnerability.
-  - Because `Access-Control-Allow-Credentials: true` is not present, third-party sites cannot read authenticated session data across origins via standard browser fetch.
-  - However, returning wildcard CORS on top-level HTML documents represents an overly permissive edge header policy that diverges from the principle of least privilege.
+  - **No API Vulnerability Established**: Returning wildcard `Access-Control-Allow-Origin: *` on top-level HTML document responses alone does not establish an API CORS vulnerability. Because `Access-Control-Allow-Credentials: true` is absent, cross-origin web applications cannot read authenticated user sessions via browser fetch requests.
+  - Rather, this reflects an overly permissive edge CDN header policy that departs from the principle of least privilege.
 

@@ -2,15 +2,17 @@
 
 ## 1. Scope & Methodology
 
-This performance analysis is based strictly on **empirically measured network metrics** collected via authenticated timing probes (`curl.exe` with formatted timing flags) targeting `www.cynbit.in` and `portal.cynbit.in` from an Indian client connection (resolving to Vercel's Mumbai Edge PoP: `bom1`).
+This performance analysis is based strictly on **empirically measured single-session baseline metrics** collected via timing probes (`curl.exe` with formatted timing flags) targeting `www.cynbit.in` and `portal.cynbit.in` from an Indian client connection (resolving to Vercel's Mumbai Edge PoP: `bom1`).
 
-No synthetic metrics, artificial benchmarks, or unverified backend processing times have been assumed or included.
+> [!NOTE]
+> **Baseline Classification Notice**:
+> These figures represent a **point-in-time, single-session baseline**, not sustained load benchmarks, multi-sample statistical distributions, or backend execution profiling. They provide an observational snapshot of edge delivery latency and TLS handshake characteristics from a single evaluation environment.
 
 ---
 
-## 2. Empirical Timing & Latency Telemetry
+## 2. Empirical Single-Session Baseline Telemetry
 
-Measurements were collected using HTTP/1.1 over TLS 1.3 against the root path (`/`) of both target hosts:
+Measurements were collected using HTTP/1.1 over TLS 1.3 against the root path (`/`) of both target hosts during a single observation session:
 
 | Metric / Phase | `www.cynbit.in` | `portal.cynbit.in` | Description |
 | :--- | :--- | :--- | :--- |

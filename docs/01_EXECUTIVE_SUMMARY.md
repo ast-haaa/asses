@@ -34,11 +34,11 @@ A comprehensive backend technical audit of Cynbit Technologies' public digital i
 The website operates on modern cloud infrastructure powered by **Vercel's Global Edge Network** (`bom1` Mumbai node) with **Next.js App Router** and React Server Components. Traditional REST/JSON endpoints (`/api/*`) are not deployed; rather, state transitions and form submissions execute via Next.js Server Actions over HTTP POST RPC.
 
 ### 2. Observable Security & Architectural Findings (Calibrated)
-- **RSC UI Template Disclosure in 307 Redirects**: When accessing protected routes on `portal.cynbit.in` (such as `/dashboard`), the server issues an HTTP 307 redirect to `/`. However, the response body contains the fully streamed React Server Component template, exposing internal feature names, tools, and route URLs to unauthenticated HTTP inspectors.
-- **Client-Side Document Reference Construction**: Internal document generators construct reference numbers in the browser using `Math.random()` and submit them to server logging actions, inverting the authoritative generation of business identifiers.
+- **RSC UI Template Disclosure in 307 Redirects**: When accessing `portal.cynbit.in/dashboard` without a session, the server issues an HTTP 307 redirect to `/`. However, the response body delivers a chunk-encoded React Server Component template containing UI layout text and structure before the client-side redirect instruction (`NEXT_REDIRECT`) is evaluated.
+- **Client-Side Document Reference Construction**: Document generators construct reference numbers in the browser using `Math.random()` and submit them to server logging actions, inverting authoritative generation of business identifiers.
 - **Shared-Key Login Design**: The administrative portal features an observable single-credential ("Security Key") login model, which inherently lacks multi-user accountability, individual employee tracking, and role differentiation.
-- **Defense-in-Depth Header Gaps**: Standard hardening headers (`Content-Security-Policy`, `X-Frame-Options`, `X-Content-Type-Options: nosniff`) are absent on both `www.cynbit.in` and `portal.cynbit.in`.
-- **Wildcard CORS Configuration**: An `Access-Control-Allow-Origin: *` header is returned on top-level HTML document requests.
+- **Defense-in-Depth Header Gaps**: Standard hardening headers (`Content-Security-Policy`, `X-Frame-Options`, `X-Content-Type-Options: nosniff`) are absent on both `www.cynbit.in` and `portal.cynbit.in`, representing an opportunity for edge defense-in-depth hardening (though missing headers alone do not establish confirmed exploitability).
+- **Wildcard CORS Configuration**: An `Access-Control-Allow-Origin: *` header is returned on top-level HTML document requests (an overly permissive edge configuration, though not an authenticated API vulnerability).
 
 ### 3. Concrete Remediation & Reference Architecture
 To demonstrate production-ready engineering standards, a modular reference backend has been engineered in **Java 17 + Spring Boot 3.3**:

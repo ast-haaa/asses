@@ -40,9 +40,9 @@ Findings are strictly classified into **Confirmed Observations**, **Potential Ri
 
 | ID | Category | Finding Description | Target Location | Actual Measured Impact |
 | :--- | :--- | :--- | :--- | :--- |
-| **F-01** | **Confirmed** | **RSC UI Template Disclosure in HTTP 307 Redirect Body** | `portal.cynbit.in/dashboard` | **Low/Informational**: Streamed RSC body leaks internal tool titles, descriptions, and route URLs to unauthenticated HTTP inspectors. |
+| **F-01** | **Confirmed** | **RSC UI Template Disclosure in HTTP 307 Redirect Body** | `portal.cynbit.in/dashboard` | **Low/Informational**: Streamed RSC body in HTTP 307 delivers UI layout structure and component strings to unauthenticated clients before redirect execution. |
 | **F-02** | **Confirmed** | **Client-Side Document Reference Construction with Non-CSPRNG** | `portal.cynbit.in/dashboard/offer-letter` | **Medium**: Document IDs (`CB/HR/OFFER/2026/[10000-99999]`) are generated in the browser via `Math.random()` and submitted to server logging. |
-| **F-03** | **Confirmed** | **Missing HTTP Defense-in-Depth Headers** | `www.cynbit.in` & `portal.cynbit.in` | **Low/Medium**: CSP, X-Frame-Options, and X-Content-Type-Options: nosniff are absent across both subdomains. |
+| **F-03** | **Confirmed** | **Missing HTTP Defense-in-Depth Headers** | `www.cynbit.in` & `portal.cynbit.in` | **Low/Informational**: CSP, X-Frame-Options, and X-Content-Type-Options: nosniff are absent across both subdomains, representing an opportunity for edge defense-in-depth hardening. |
 | **F-04** | **Configuration** | **Wildcard CORS Returned on HTML Documents** | `www.cynbit.in` & `portal.cynbit.in` | **Low**: `Access-Control-Allow-Origin: *` returned on HTML document requests. Non-exploitable without credential flags, but overly permissive. |
 | **F-05** | **Configuration** | **Observable Shared-Key Login Pattern** | `portal.cynbit.in/` | **Operational Risk**: Portal form sends only a `password` field ("Security Key"), lacking individual employee identities at the gateway. |
 | **F-06** | **Performance** | **Uncached 307 Apex Domain Redirection** | `https://cynbit.in/` $\rightarrow$ `https://www.cynbit.in/` | **Latency Overhead**: Uses `307 Temporary Redirect` (`max-age=0`) instead of `308 Permanent`, incurring an uncacheable round-trip hop. |
@@ -57,17 +57,21 @@ Findings are strictly classified into **Confirmed Observations**, **Potential Ri
 | :--- | :--- | :--- | :--- |
 | `Strict-Transport-Security` | **Present** (`max-age=63072000`) | **Present** (`max-age=63072000`) | `max-age=63072000; includeSubDomains; preload` |
 | `Content-Security-Policy` | **Absent** | **Absent** | `default-src 'self'; frame-ancestors 'none';` |
-| `X-Frame-Options` | **Absent** | **Absent** | `DENY` or `SAMEORIGIN` (prevents clickjacking) |
+| `X-Frame-Options` | **Absent** | **Absent** | `DENY` or `SAMEORIGIN` (prevents framing) |
 | `X-Content-Type-Options` | **Absent** | **Absent** | `nosniff` (prevents MIME sniffing) |
 | `Referrer-Policy` | **Absent** | **Absent** | `strict-origin-when-cross-origin` |
 | `Permissions-Policy` | **Absent** | **Absent** | `camera=(), microphone=(), geolocation=()` |
 | `Access-Control-Allow-Origin` | `*` (Wildcard) | `*` (Wildcard) | Whitelisted explicit origins only |
 
+> [!NOTE]
+> **Interpretation Boundary**:
+> The absence of defense-in-depth headers represents an opportunity to harden edge policies. Missing `X-Frame-Options` or `Content-Security-Policy` does not alone establish active exploitability in all browser contexts, missing `Permissions-Policy` leaves features to browser defaults, and wildcard `Access-Control-Allow-Origin` on HTML responses alone does not establish an authenticated API CORS vulnerability.
+
 ---
 
-## 5. Measured Performance & Latency Telemetry
+## 5. Single-Session Empirical Baseline Telemetry (Point-in-Time Spot Probes)
 
-Measured using direct timing probes from an Indian client connection targeting Vercel Mumbai (`bom1`):
+Measured using single-session timing probes from an Indian client connection targeting Vercel Mumbai (`bom1`) (point-in-time baseline, not sustained performance benchmarks):
 
 ```
 www.cynbit.in (100.4 KB HTML - Edge Cache HIT: Age 233854s)

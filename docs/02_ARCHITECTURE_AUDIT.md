@@ -75,7 +75,7 @@ Passive analysis of public network responses confirms that the application does 
 The following Server Actions were empirically identified and extracted from public JavaScript bundles, now preserved in sanitized form in [`evidence/EVIDENCE_LOG.md`](../evidence/EVIDENCE_LOG.md):
 
 #### 1. Public Inquiry Submission (`submitInquiry`)
-- **Action Identifier Hash**: `40247ba4465344b3386595bab4303317cdcce907df`
+- **Action Identifier**: `[ACTION_ID_INQUIRY]` (`submitInquiry`)
 - **Source Verification**: Documented in [`EVIDENCE_LOG.md § 3.2`](../evidence/EVIDENCE_LOG.md#32-public-contact-form-submitinquiry) (extracted via [`inspect_chunk.ps1`](../evidence/inspect_chunk.ps1))
 - **Calling Route**: `https://www.cynbit.in/contact`
 - **Identified Request Fields** (`FormData`):
@@ -91,7 +91,7 @@ The following Server Actions were empirically identified and extracted from publ
 - **Client Handling**: On `success: true`, renders an "Inquiry Received" confirmation state. On `false`, displays fallback text: `"Something went wrong. Please try again or email us directly."`
 
 #### 2. Candidate Application Submission (`submitCandidateApplication`)
-- **Action Identifier Hash**: `40645a00e04f68541170eb8fc5f6fb052cfce904b7`
+- **Action Identifier**: `[ACTION_ID_CAREER_APP]` (`submitCandidateApplication`)
 - **Source Verification**: Documented in [`EVIDENCE_LOG.md § 3.3`](../evidence/EVIDENCE_LOG.md#33-candidate-application-form-submitcandidateapplication) (extracted via [`inspect_slug_chunk.ps1`](../evidence/inspect_slug_chunk.ps1))
 - **Calling Route**: `https://www.cynbit.in/careers/[slug]`
 - **Identified Request Fields** (`FormData`):
@@ -126,7 +126,7 @@ The following Server Actions were empirically identified and extracted from publ
 - **Client Handling**: If `success: true`, displays success confirmation. If `isDuplicate: true`, extracts `trackingUrl` to inform the candidate of existing application status. Otherwise displays `error` string.
 
 #### 3. Administrative Portal Login (`loginToPortal`)
-- **Action Identifier Hash**: `40d93da1cc26de4e9c704f5cb1b70a75f85fa32e3d`
+- **Action Identifier**: `[ACTION_ID_PORTAL_LOGIN]` (`loginToPortal`)
 - **Source Verification**: Documented in [`EVIDENCE_LOG.md § 4`](../evidence/EVIDENCE_LOG.md#4-portal-shared-key-authentication-pattern)
 - **Calling Route**: `https://portal.cynbit.in/`
 - **Identified Request Fields** (`FormData`):
@@ -138,9 +138,9 @@ The following Server Actions were empirically identified and extracted from publ
 - **Client Handling**: On `success: true`, triggers client-side router transition to `/dashboard`.
 
 #### 4. Document Reference & Logging Actions (`logDocumentToDB` & `fetchDocumentByRef`)
-- **Action Identifier Hashes**:
-  - `logDocumentToDB`: `78b2e843c9bec963d7ae83d753ba5797d36acf8f34`
-  - `fetchDocumentByRef`: `40244e9a6ff014cf50fb7ae4db6efa3442036103dd`
+- **Action Identifiers**:
+  - `logDocumentToDB`: `[ACTION_ID_DOC_LOG]` (`logDocumentToDB`)
+  - `fetchDocumentByRef`: `[ACTION_ID_DOC_FETCH]` (`fetchDocumentByRef`)
 - **Source Verification**: Documented in [`EVIDENCE_LOG.md § 2`](../evidence/EVIDENCE_LOG.md#2-client-side-document-reference-construction) (extracted via [`inspect_offer_letter.ps1`](../evidence/inspect_offer_letter.ps1))
 - **Calling Route**: `https://portal.cynbit.in/dashboard/offer-letter`
 - **Identified Parameters for `logDocumentToDB`**:
@@ -153,12 +153,12 @@ The following Server Actions were empirically identified and extracted from publ
 
 #### 5. Intern & Submission Management Actions
 - **Source Verification**: Documented in [`EVIDENCE_LOG.md § 3`](../evidence/EVIDENCE_LOG.md#3-server-action-rpc-transport--form-serialization) (extracted via [`inspect_interns.ps1`](../evidence/inspect_interns.ps1) and [`inspect_submissions.ps1`](../evidence/inspect_submissions.ps1))
-- `adminGetInterns` (`00162e117247af97...`): Retrieves registered intern roster.
-- `adminCreateIntern` (`40bbe4bc0e325f31...`): Creates intern profile.
-- `adminCreateTask` (`406f95b4b6209de5...`): Dispatches task deliverables.
-- `adminGetSubmissions` (`00c08cb87bdbc6bd...`): Fetches EOD submissions.
-- `adminUpdateSubmissionStatus` (`70e82d7f651d07f2...`): Updates single submission review state.
-- `adminBatchUpdateSubmissionStatus` (`70d909e95734c649...`): Batch updates multiple submissions.
+- `adminGetInterns`: Retrieves registered intern roster.
+- `adminCreateIntern`: Creates intern profile.
+- `adminCreateTask`: Dispatches task deliverables.
+- `adminGetSubmissions`: Fetches EOD submissions.
+- `adminUpdateSubmissionStatus`: Updates single submission review state.
+- `adminBatchUpdateSubmissionStatus`: Batch updates multiple submissions.
 
 ---
 

@@ -3,7 +3,7 @@
 **Assessment**: Cynbit Technologies — Backend Developer Intern Technical Assessment  
 **Target Hosts**: `https://www.cynbit.in/` & `https://portal.cynbit.in/`  
 **Scope**: Passive, authorized, read-only reconnaissance  
-**Status**: Sanitized publication log (redacted proprietary markup, direct telephone numbers, and unindexed internal route paths)
+**Status**: Sanitized publication log (redacted proprietary markup, direct telephone numbers, internal tool names, and unindexed internal route paths)
 
 ---
 
@@ -36,29 +36,25 @@
   <!-- Next.js streamed flight chunks delivered in the 307 redirect body -->
   <script>(self.__next_f=self.__next_f||[]).push([0])</script>
   <script>self.__next_f.push([1,"...
-    [\"$\",\"h3\",null,{\"children\":\"Offer Letter Generator\"}],
-    [\"$\",\"p\",null,{\"children\":\"Generate official offer letters for new hires with custom terms and salary details.\"}],
-    [\"$\",\"a\",null,{\"href\":\"[REDACTED_INTERNAL_ROUTE_1]\",\"children\":\"Get Started\"}],
+    [\"$\",\"h3\",null,{\"children\":\"[Internal Tool Title A]\"}],
+    [\"$\",\"p\",null,{\"children\":\"[Sanitized operational description A]\"}],
+    [\"$\",\"a\",null,{\"href\":\"[REDACTED_INTERNAL_ROUTE_A]\",\"children\":\"Get Started\"}],
 
-    [\"$\",\"h3\",null,{\"children\":\"Bitelevate Offer Letter\"}],
-    [\"$\",\"p\",null,{\"children\":\"Generate selection letters for candidates joining the Bitelevate Training Program.\"}],
-    [\"$\",\"a\",null,{\"href\":\"[REDACTED_INTERNAL_ROUTE_2]\",\"children\":\"Get Started\"}],
+    [\"$\",\"h3\",null,{\"children\":\"[Internal Tool Title B]\"}],
+    [\"$\",\"p\",null,{\"children\":\"[Sanitized operational description B]\"}],
+    [\"$\",\"a\",null,{\"href\":\"[REDACTED_INTERNAL_ROUTE_B]\",\"children\":\"Get Started\"}],
 
-    [\"$\",\"h3\",null,{\"children\":\"Joining Kit Generator\"}],
-    [\"$\",\"p\",null,{\"children\":\"Create comprehensive onboarding documents including NDA and Terms of Employment.\"}],
-
-    [\"$\",\"h2\",null,{\"children\":\"Central Document Log\"}],
-    [\"$\",\"p\",null,{\"children\":\"A secure, permanent record of all generated HR documents.\"}],
-    [\"$\",\"p\",null,{\"children\":\"No documents have been logged to the database yet.\"}],
+    [\"$\",\"h2\",null,{\"children\":\"[Internal Document Log Section]\"}],
+    [\"$\",\"p\",null,{\"children\":\"[Sanitized log description]\"}],
   ..."])</script>
   <script>self.__next_f.push([1,"7:E{\"digest\":\"NEXT_REDIRECT;replace;/;307;\"}\n"])</script>
 </body>
 </html>
 ```
 
-### Technical Significance & Verification
-- Next.js App Router Server Components evaluate the component render function prior to emitting the redirect digest if `redirect('/')` is executed inside component logic rather than at the edge gatekeeper (`middleware.ts`).
-- **Publication Sanitation**: Specific internal sub-route URLs and unindexed administrative endpoints have been redacted (`[REDACTED_INTERNAL_ROUTE_*]`) to avoid indexing Cynbit's internal directory on public repositories while fully preserving the technical proof of streaming RSC payload leakage in HTTP 307 redirects.
+### Empirical Scope & Technical Boundary
+- **What the Evidence Demonstrates**: The captured wire trace shows that an unauthenticated HTTP `GET /dashboard` request received an HTTP 307 redirect status code while concurrently delivering a chunk-encoded body containing a serialized React Server Component (RSC) flight payload with UI layout strings, followed by a client-side redirect instruction (`NEXT_REDIRECT`).
+- **Technical Boundary**: This observation documents the observed wire response. It does not establish the internal server-side implementation details (e.g., whether the redirect originated within a component, a layout, or a server function, or whether edge middleware was active). Specific internal tool names, sub-route paths, and operational descriptions have been replaced with sanitized placeholders (`[Internal Tool Title A]`, `[REDACTED_INTERNAL_ROUTE_*]`) to preserve publication privacy.
 
 ---
 
@@ -67,8 +63,8 @@
 * **Observation Reference**: Finding F-02 / Finding 1.2 in [`docs/03_SECURITY_FINDINGS.md`](../docs/03_SECURITY_FINDINGS.md)
 * **Target Location**: `portal.cynbit.in/dashboard/offer-letter` (Extracted from client bundle)
 * **Observed Server Actions**:
-  - `logDocumentToDB` (`78b2e843c9bec963d7ae83d753ba5797d36acf8f34`)
-  - `fetchDocumentByRef` (`40244e9a6ff014cf50fb7ae4db6efa3442036103dd`)
+  - `logDocumentToDB` (`[ACTION_ID_DOC_LOG]`)
+  - `fetchDocumentByRef` (`[ACTION_ID_DOC_FETCH]`)
 
 ### Verifiable Client-Side Code Excerpt
 ```javascript
@@ -101,7 +97,7 @@ Extracted from public Webpack bundles:
 ```javascript
 // RPC Client Reference Stub Registration
 const submitInquiryAction = (0, d.createServerReference)(
-  "40247ba4465344b3386595bab4303317cdcce907df",
+  "[ACTION_ID_INQUIRY]",
   d.callServer,
   void 0,
   d.findSourceMapURL,
@@ -111,7 +107,7 @@ const submitInquiryAction = (0, d.createServerReference)(
 
 ### 3.2 Public Contact Form (`submitInquiry`)
 * **Calling Route**: `https://www.cynbit.in/contact`
-* **Action Identifier Hash**: `40247ba4465344b3386595bab4303317cdcce907df`
+* **Action Identifier**: `[ACTION_ID_INQUIRY]` (`submitInquiry`)
 * **Client Dispatch Excerpt**:
   ```javascript
   let d = async e => {
@@ -130,7 +126,7 @@ const submitInquiryAction = (0, d.createServerReference)(
 
 ### 3.3 Candidate Application Form (`submitCandidateApplication`)
 * **Calling Route**: `https://www.cynbit.in/careers/[slug]`
-* **Action Identifier Hash**: `40645a00e04f68541170eb8fc5f6fb052cfce904b7`
+* **Action Identifier**: `[ACTION_ID_CAREER_APP]` (`submitCandidateApplication`)
 * **Client Dispatch Excerpt**:
   ```javascript
   let N = async e => {
@@ -157,7 +153,7 @@ const submitInquiryAction = (0, d.createServerReference)(
 
 * **Observation Reference**: Finding F-05 / Observation 3.1 in [`docs/03_SECURITY_FINDINGS.md`](../docs/03_SECURITY_FINDINGS.md)
 * **Target Route**: `https://portal.cynbit.in/`
-* **Action Identifier Hash**: `40d93da1cc26de4ef37bcb273184b7141ef77a50f8` (`loginToPortal`)
+* **Action Identifier**: `[ACTION_ID_PORTAL_LOGIN]` (`loginToPortal`)
 
 ### Client Form Dispatch Excerpt
 ```javascript
@@ -192,20 +188,22 @@ async function handleLogin(e) {
 ### 5.1 Security Header Comparison
 Measured across both subdomains via HTTP/1.1 over TLS 1.3:
 
-| Header | `www.cynbit.in` | `portal.cynbit.in` | Observed Value / Implication |
+| Header | `www.cynbit.in` | `portal.cynbit.in` | Observed Status / Technical Interpretation |
 | :--- | :--- | :--- | :--- |
-| `Strict-Transport-Security` | **Present** | **Present** | `max-age=63072000` (2-year HSTS enforcement) |
-| `Content-Security-Policy` | **Absent** | **Absent** | No restriction on script/frame sources |
-| `X-Frame-Options` | **Absent** | **Absent** | Portal allows framing; clickjacking risk |
-| `X-Content-Type-Options` | **Absent** | **Absent** | No MIME-sniffing protection |
-| `Referrer-Policy` | **Absent** | **Absent** | Default browser referrer behavior |
-| `Permissions-Policy` | **Absent** | **Absent** | Browser APIs unrestricted |
-| `Access-Control-Allow-Origin` | `*` (Wildcard) | `*` (Wildcard) | Overly permissive header on HTML responses |
+| `Strict-Transport-Security` | **Present** | **Present** | `max-age=63072000` (Enforces HTTPS transport) |
+| `Content-Security-Policy` | **Absent** | **Absent** | Header absent. Absence of this defense-in-depth header does not alone prove all script/frame sources are unrestricted. |
+| `X-Frame-Options` | **Absent** | **Absent** | Header absent. Absence of an explicit anti-framing header indicates missing defense-in-depth; it does not alone establish that framing is exploitable in all modern browser contexts. |
+| `X-Content-Type-Options` | **Absent** | **Absent** | Header absent (`nosniff` not declared). |
+| `Referrer-Policy` | **Absent** | **Absent** | Header absent (browser defaults apply). |
+| `Permissions-Policy` | **Absent** | **Absent** | Header absent. Explicit feature restrictions (camera, mic, geolocation) not declared via header; browser defaults apply. |
+| `Access-Control-Allow-Origin` | `*` (Wildcard) | `*` (Wildcard) | Wildcard returned on HTML documents. Represents an overly permissive edge header configuration; does not establish an authenticated API CORS vulnerability since credentials are not enabled. |
 
 *Full raw header captures are preserved in [`raw_headers_www.txt`](raw_headers_www.txt) and [`raw_headers_portal.txt`](raw_headers_portal.txt).*
 
-### 5.2 Network Latency Probes
-Measured from an Indian client connection targeting Vercel Edge PoP `bom1` (Mumbai, India):
+### 5.2 Network Latency Baseline (Single-Session Spot Probes)
+> [!NOTE]
+> **Measurement Notice**:
+> The following figures represent a point-in-time, single-session baseline captured from an individual client connection targeting Vercel Mumbai (`bom1`). They are point-in-time spot observations, not sustained load tests, multi-sample statistical benchmarks, or isolated server execution measurements.
 
 ```
 Target: www.cynbit.in (Vercel Anycast 64.29.17.65)
@@ -226,7 +224,8 @@ Target: portal.cynbit.in (Vercel Anycast 64.29.17.65)
 ## 6. Audit Data Retention & Disclosure Principles
 
 To maintain strict ethical standards and ensure the repository is safe for public GitHub hosting:
-1. **No Raw HTML Dumps**: Marketing text, direct employee phone numbers, and complete DOM trees have been replaced by targeted technical excerpts above.
-2. **No Bulk Client Bundles**: Compiled Next.js Webpack chunks have been reduced to minimal, non-proprietary code snippets proving the specific technical mechanisms.
-3. **No Unindexed Metadata**: Private administrative route names and unindexed portal details from `portal_dashboard.html` have been redacted.
-4. **Preserved Raw Headers**: Raw HTTP response headers are preserved in [`raw_headers_www.txt`](raw_headers_www.txt) and [`raw_headers_portal.txt`](raw_headers_portal.txt) as standard, non-sensitive audit evidence.
+1. **No Raw HTML Dumps**: Marketing text, direct employee phone numbers, and complete DOM trees have been removed and replaced by targeted technical excerpts above.
+2. **No Bulk Client Bundles**: Compiled Next.js Webpack chunks have been removed and replaced with minimal, non-proprietary code snippets proving the specific technical mechanisms.
+3. **No Unindexed Metadata or Specific Tool Names**: Private administrative route names and unindexed portal feature names from the 307 redirect body have been sanitized.
+4. **Sanitized Action Identifiers**: Exact hexadecimal Server Action hashes have been replaced with descriptive architectural labels (`[ACTION_ID_*]`).
+5. **Preserved Raw Headers**: Raw HTTP response headers are preserved in [`raw_headers_www.txt`](raw_headers_www.txt) and [`raw_headers_portal.txt`](raw_headers_portal.txt) as standard, non-sensitive audit evidence.
