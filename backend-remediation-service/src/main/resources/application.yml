@@ -28,10 +28,7 @@ app:
       issuer: ${JWT_ISSUER:cynbit.in}
       cookie-name: ${JWT_COOKIE_NAME:cynbit_session}
   cors:
-    allowed-origins:
-      - "https://www.cynbit.in"
-      - "https://portal.cynbit.in"
-      - "http://localhost:3000"
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:https://www.cynbit.in,https://portal.cynbit.in}
   rate-limiting:
     inquiry-limit-per-5-minutes: ${INQUIRY_RATE_LIMIT:10}
     career-limit-per-15-minutes: ${CAREER_RATE_LIMIT:5}
@@ -43,15 +40,21 @@ logging:
     org.springframework.security: INFO
 
 ---
-# MySQL Profile Configuration (Activated via --spring.profiles.active=mysql)
-# PRODUCTION SECURITY NOTICE:
-# 1. Credentials MUST be supplied via environment variables; fallback plain-text credentials are prohibited.
-# 2. TLS/SSL encryption is enforced (sslMode=REQUIRED). Do not downgrade to useSSL=false in production.
-# 3. Restrict database user permissions to least privilege (SELECT, INSERT, UPDATE) for runtime services.
+# ==============================================================================
+# UNIMPLEMENTED ARCHITECTURAL EXAMPLE: MySQL Profile
+# ==============================================================================
+# NOTICE: The reference service operates strictly in-memory (ConcurrentHashMap).
+# Live Spring Data JPA repositories and MySQL connections are NOT implemented
+# in this standalone evaluation build.
+#
+# This profile serves as an architectural configuration blueprint showing how a
+# production deployment would configure MySQL 8.0+ with enforced TLS (sslMode=REQUIRED)
+# and mandatory externalized credentials (no plaintext fallbacks).
+# ==============================================================================
 spring:
   config:
     activate:
-      on-profile: mysql
+      on-profile: mysql-example
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/cynbit_remediation_db?sslMode=REQUIRED&serverTimezone=UTC}
     username: ${SPRING_DATASOURCE_USERNAME}

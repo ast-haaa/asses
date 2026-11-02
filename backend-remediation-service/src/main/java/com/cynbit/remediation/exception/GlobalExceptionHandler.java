@@ -50,7 +50,7 @@ public class GlobalExceptionHandler {
         problem.setTitle("Duplicate Application");
         problem.setType(URI.create("https://api.cynbit.in/errors/duplicate-application"));
         problem.setInstance(URI.create(request.getRequestURI()));
-        problem.setProperty("trackingUrl", ex.getTrackingUrl());
+        // CRITICAL PRIVACY DEFENSE: Do NOT attach trackingUrl or trackingToken to prevent user enumeration
         problem.setProperty("timestamp", Instant.now());
         return problem;
     }

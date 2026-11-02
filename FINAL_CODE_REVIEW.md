@@ -127,7 +127,7 @@ This review provides a strict, evidence-based evaluation of the Java 17 + Spring
 ---
 
 ### Criterion 10: Test Suite Validity & Assertion Depth
-* **Code Location**: `src/test/java/com/cynbit/remediation/` (7 Test Classes, 30 Total Tests)
+* **Code Location**: `src/test/java/com/cynbit/remediation/` (8 Test Classes, 34 Total Tests)
 * **Test Coverage Summary**:
   1. `RateLimiterConcurrencyTest` (5 tests):
      - 50 concurrent threads on capacity 10 with atomic exhaustion and zero race conditions.
@@ -143,6 +143,7 @@ This review provides a strict, evidence-based evaluation of the Java 17 + Spring
      - Rejects invalid credentials with 401 ProblemDetail.
   3. `CareerControllerTest` (2 tests):
      - Submits application, verifies minimal status retrieval with high-entropy token, and rejects duplicate submissions with 409 Conflict.
+     - Regression assertion: Duplicate application response does NOT disclose existing tracking token or URL.
      - Blocks unauthorized HTTP methods (e.g. `DELETE`) with 401 Unauthorized.
   4. `InquiryControllerTest` (2 tests):
      - Accepts valid inquiries with 201 Created.
@@ -157,16 +158,21 @@ This review provides a strict, evidence-based evaluation of the Java 17 + Spring
      - Rejects blacklisted tokens.
      - Enforces minimum 32-byte (256-bit) secret entropy.
      - Rejects malformed strings.
-  6. `DocumentReferenceServiceTest` (3 tests):
+  6. `ApplicationServiceTest` (5 tests):
+     - Generates high-entropy tracking token (`trk_...`) and withholds candidate PII from public status response.
+     - Enforces atomic deduplication using `putIfAbsent` against concurrent duplicate submissions.
+     - Proves multi-threaded concurrency safety: exactly one submission succeeds out of 20 simultaneous threads.
+     - Atomically logs document references with collision retry using `putIfAbsent`.
+     - Validates that intern roster and submission records are explicitly labeled as synthetic demonstration data.
+  7. `AuthServiceTest` (3 tests):
+     - Prevents development account seeding under production profile (`prod`/`production`), failing fast with `IllegalStateException`.
+     - Verifies empty registry when dev seed is disabled.
+     - Verifies dynamic user registration via test fixtures.
+  8. `DocumentReferenceServiceTest` (3 tests):
      - Generates valid reference number matching canonical format.
      - Demonstrates collision resistance across 10,000 references.
      - Computes deterministic SHA-256 payload checksums.
-  7. `ApplicationServiceTest` (4 tests):
-     - Generates high-entropy tracking token (`trk_...`) and withholds candidate PII from public status response.
-     - Enforces atomic deduplication using `putIfAbsent` against concurrent duplicate submissions.
-     - Atomically logs document references with collision retry using `putIfAbsent`.
-     - Validates that intern roster and submission records are explicitly labeled as synthetic demonstration data.
-* **Verdict**: **PASSED (30/30 Genuine Tests)**
+* **Verdict**: **PASSED (34/34 Genuine Tests)**
 
 ---
 
@@ -178,44 +184,30 @@ This review provides a strict, evidence-based evaluation of the Java 17 + Spring
 [INFO]  T E S T S
 [INFO] -------------------------------------------------------
 [INFO] Running com.cynbit.remediation.config.RateLimiterConcurrencyTest
-[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.722 s
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.610 s
 [INFO] Running com.cynbit.remediation.controller.AuthControllerTest
-[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.989 s
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 9.213 s
 [INFO] Running com.cynbit.remediation.controller.CareerControllerTest
-[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.142 s
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.136 s
 [INFO] Running com.cynbit.remediation.controller.InquiryControllerTest
-[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.048 s
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.064 s
 [INFO] Running com.cynbit.remediation.security.JwtTokenProviderTest
-[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.037 s
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.032 s
 [INFO] Running com.cynbit.remediation.service.ApplicationServiceTest
-[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s
+[INFO] Running com.cynbit.remediation.service.AuthServiceTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.399 s
 [INFO] Running com.cynbit.remediation.service.DocumentReferenceServiceTest
-[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.182 s
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.160 s
 [INFO] 
 [INFO] Results:
 [INFO] 
-[INFO] Tests run: 30, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 34, Failures: 0, Errors: 0, Skipped: 0
 [INFO] 
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-```
-[INFO] Running com.cynbit.remediation.controller.InquiryControllerTest
-[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.044 s
-[INFO] Running com.cynbit.remediation.security.JwtTokenProviderTest
-[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.030 s
-[INFO] Running com.cynbit.remediation.service.DocumentReferenceServiceTest
-[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.184 s
-[INFO] 
-[INFO] Results:
-[INFO] 
-[INFO] Tests run: 26, Failures: 0, Errors: 0, Skipped: 0
-[INFO] 
-[INFO] ------------------------------------------------------------------------
-[INFO] BUILD SUCCESS
-[INFO] ------------------------------------------------------------------------
-[INFO] Total time:  29.252 s
-[INFO] Finished at: 2026-11-02T21:17:17+05:30
+[INFO] Total time:  23.537 s
 [INFO] ------------------------------------------------------------------------
 ```
 
@@ -227,8 +219,7 @@ This review provides a strict, evidence-based evaluation of the Java 17 + Spring
 [INFO] Replacing main artifact with repackaged archive.
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
-[INFO] Total time:  10.627 s
-[INFO] Finished at: 2026-11-02T21:17:42+05:30
+[INFO] Total time:  5.395 s
 [INFO] ------------------------------------------------------------------------
 ```
 - **Executable Output**: `backend-remediation-service/target/cynbit-backend-remediation-1.0.0.jar` (Self-contained executable Spring Boot archive with embedded Tomcat).

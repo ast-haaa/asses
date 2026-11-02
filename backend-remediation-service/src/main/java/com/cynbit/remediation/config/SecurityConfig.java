@@ -48,7 +48,7 @@ public class SecurityConfig {
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter,
             ObjectMapper objectMapper,
-            @Value("${app.cors.allowed-origins:https://www.cynbit.in,https://portal.cynbit.in,http://localhost:3000}") List<String> allowedOrigins) {
+            @Value("${app.cors.allowed-origins:https://www.cynbit.in,https://portal.cynbit.in}") List<String> allowedOrigins) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.objectMapper = objectMapper;
         this.allowedOrigins = allowedOrigins;

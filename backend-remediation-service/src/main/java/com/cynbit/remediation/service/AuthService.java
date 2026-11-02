@@ -9,6 +9,8 @@ import com.cynbit.remediation.security.UserRole;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,7 @@ public class AuthService {
     public AuthService(
             PasswordEncoder passwordEncoder,
             JwtTokenProvider jwtTokenProvider,
+            Environment env,
             @Value("${app.security.jwt.expiration-ms:28800000}") long expirationMs,
             @Value("${app.security.dev-seed.enabled:false}") boolean devSeedEnabled,
             @Value("${app.security.dev-seed.username:}") String devUsername,
@@ -38,6 +41,18 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
         this.expirationMs = expirationMs;
+
+        // CRITICAL PRODUCTION DEFENSE: Fail fast if dev seed is attempted under production profile
+        boolean isProduction = env.acceptsProfiles(Profiles.of("prod", "production"))
+                || "prod".equalsIgnoreCase(env.getProperty("spring.profiles.active"))
+                || "production".equalsIgnoreCase(env.getProperty("spring.profiles.active"));
+
+        if (isProduction && devSeedEnabled) {
+            throw new IllegalStateException(
+                    "FATAL SECURITY VIOLATION: Development account seeding (DEV_SEED_ENABLED=true) is strictly forbidden " +
+                    "under the production profile. Application startup aborted."
+            );
+        }
 
         if (devSeedEnabled) {
             if (StringUtils.hasText(devUsername) && StringUtils.hasText(devPassword)) {

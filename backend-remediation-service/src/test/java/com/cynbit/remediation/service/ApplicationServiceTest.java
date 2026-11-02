@@ -11,6 +11,11 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -56,8 +61,8 @@ class ApplicationServiceTest {
     }
 
     @Test
-    @DisplayName("Should enforce atomic deduplication using putIfAbsent and reject repeated submissions")
-    void shouldEnforceAtomicDeduplication() {
+    @DisplayName("Should enforce atomic deduplication using putIfAbsent and never expose existing tracking token/URL")
+    void shouldEnforceAtomicDeduplicationAndNeverExposeExistingToken() {
         CareerApplicationRequest request = new CareerApplicationRequest();
         request.setFullName("Vikram Malhotra");
         request.setEmail("vikram.malhotra@example.local");
@@ -76,11 +81,66 @@ class ApplicationServiceTest {
         assertNotNull(first.getTrackingToken());
 
         // Second submission with exact same email and job id must be rejected atomically
+        // REGRESSION ASSERTION: The exception must NOT contain or expose the existing candidate's tracking token or URL
         DuplicateApplicationException ex = assertThrows(DuplicateApplicationException.class, () ->
                 applicationService.submitCareerApplication("backend-developer-intern", request)
         );
-        assertTrue(ex.getMessage().contains("already submitted an active application"));
-        assertNotNull(ex.getTrackingUrl());
+        assertTrue(ex.getMessage().contains("Unable to process application"));
+        assertFalse(ex.getMessage().contains(first.getTrackingToken()), "Duplicate error message must NOT leak existing tracking token");
+    }
+
+    @Test
+    @DisplayName("Genuine concurrent deduplication: exactly one submission must succeed across 20 simultaneous threads")
+    void shouldAllowExactlyOneSubmissionUnderHighConcurrency() throws InterruptedException {
+        CareerApplicationRequest request = new CareerApplicationRequest();
+        request.setFullName("Concurrent Candidate");
+        request.setEmail("concurrent.candidate@example.local");
+        request.setPhone("+919876543210");
+        request.setDob("2001-01-01");
+        request.setGender("OTHER");
+        request.setNoticePeriod("Immediate");
+        request.setSkills("Concurrency, Multi-Threading, Spring Boot");
+        request.setCurrentCity("Pune");
+        request.setPermanentAddress("Pune");
+        request.setMessage("Testing race conditions.");
+        request.setAgreedToTerms(true);
+
+        int threadCount = 20;
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch readyLatch = new CountDownLatch(threadCount);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(threadCount);
+
+        AtomicInteger successCount = new AtomicInteger(0);
+        AtomicInteger duplicateCount = new AtomicInteger(0);
+        AtomicInteger errorCount = new AtomicInteger(0);
+
+        for (int i = 0; i < threadCount; i++) {
+            executor.submit(() -> {
+                readyLatch.countDown();
+                try {
+                    startLatch.await();
+                    applicationService.submitCareerApplication("backend-developer-intern", request);
+                    successCount.incrementAndGet();
+                } catch (DuplicateApplicationException e) {
+                    duplicateCount.incrementAndGet();
+                } catch (Exception e) {
+                    errorCount.incrementAndGet();
+                } finally {
+                    doneLatch.countDown();
+                }
+            });
+        }
+
+        readyLatch.await();
+        startLatch.countDown(); // Trigger all 20 threads simultaneously
+        boolean completed = doneLatch.await(10, TimeUnit.SECONDS);
+        executor.shutdown();
+
+        assertTrue(completed, "All concurrent requests should complete within timeout");
+        assertEquals(1, successCount.get(), "Strictly one submission must succeed");
+        assertEquals(threadCount - 1, duplicateCount.get(), "All other concurrent submissions must be rejected as duplicates");
+        assertEquals(0, errorCount.get(), "Zero unexpected errors should occur");
     }
 
     @Test
@@ -127,4 +187,3 @@ class ApplicationServiceTest {
         }
     }
 }
-

@@ -76,13 +76,16 @@ class CareerControllerTest {
                 .andExpect(jsonPath("$.data.email").doesNotExist())
                 .andExpect(jsonPath("$.data.candidateName").doesNotExist());
 
-        // Duplicate attempt: 409 Conflict with trackingUrl property
+        // Duplicate attempt: 409 Conflict without leaking existing tracking token or URL
         mockMvc.perform(post("/api/v1/careers/backend-developer-intern/applications")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.title").value("Duplicate Application"))
-                .andExpect(jsonPath("$.trackingUrl").exists());
+                // REGRESSION TEST: Must NEVER disclose existing trackingUrl or trackingToken
+                .andExpect(jsonPath("$.trackingUrl").doesNotExist())
+                .andExpect(jsonPath("$.trackingToken").doesNotExist())
+                .andExpect(jsonPath("$.data").doesNotExist());
     }
 
     @Test

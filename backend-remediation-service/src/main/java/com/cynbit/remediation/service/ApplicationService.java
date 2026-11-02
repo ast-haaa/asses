@@ -73,15 +73,21 @@ public class ApplicationService {
         // Atomic deduplication using putIfAbsent
         String existingToken = emailJobIndex.putIfAbsent(duplicateKey, trackingToken);
         if (existingToken != null) {
-            String existingTrackingUrl = "https://portal.cynbit.in/status/" + existingToken;
+            // CRITICAL PRIVACY DEFENSE: Do not confirm whether an application already exists
+            // and never expose the existing candidate's tracking token or URL.
             throw new DuplicateApplicationException(
-                    "You have already submitted an active application for this position. Your profile is currently under review.",
-                    existingTrackingUrl
+                    "Unable to process application. If an application was previously submitted for this opening, status updates are sent directly to the candidate's verified contact."
             );
         }
 
-        // Successfully claimed unique key; save application record
-        applicationStore.put(trackingToken, newRecord);
+        // Failure-safe storage with reservation rollback:
+        try {
+            applicationStore.put(trackingToken, newRecord);
+        } catch (RuntimeException ex) {
+            // Safely roll back key reservation so the slot is not permanently locked
+            emailJobIndex.remove(duplicateKey, trackingToken);
+            throw ex;
+        }
 
         // Return strictly minimum status data (no PII exposure)
         return new ApplicationStatusResponse(
