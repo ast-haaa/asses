@@ -32,12 +32,13 @@ This review provides a strict, evidence-based evaluation of the Java 17 + Spring
 
 ---
 
-### Criterion 2: Password Hashing (BCrypt)
+### Criterion 2: Password Hashing (BCrypt) & Identity Seeding
 * **Code Location**: [`SecurityConfig.java`](backend-remediation-service/src/main/java/com/cynbit/remediation/config/SecurityConfig.java) & [`AuthService.java`](backend-remediation-service/src/main/java/com/cynbit/remediation/service/AuthService.java)
 * **Analysis**:
   - Password encoding bean configured as `new BCryptPasswordEncoder(12)` (logarithmic work factor 12, exceeding the default 10).
   - Passwords are never stored or compared in plaintext.
   - `passwordEncoder.encode(...)` is executed on user registration; `passwordEncoder.matches(...)` is executed during authentication.
+  - **Zero Hardcoded Credentials**: Fixed accounts and real company email addresses have been completely removed from `AuthService.java`. User seeding is controlled via an explicit dev-seed property mechanism (`app.security.dev-seed.enabled`) or dynamic test fixtures.
 * **Verdict**: **PASSED**
 
 ---
@@ -108,7 +109,7 @@ This review provides a strict, evidence-based evaluation of the Java 17 + Spring
 * **Analysis**:
   - Replaces client-side `Math.random()` ($90,000$ combinations, $50\%$ collision probability after $\approx 354$ documents via Birthday Paradox) with server-authoritative `SecureRandom` across Crockford Base32 charset ($40\text{ bits}$ entropy, $> 10^{12}$ combinations).
   - Canonical format: `CB/HR/{INT|OFFER}/{YEAR}/{CSPRNG_SUFFIX}`.
-  - **Implemented in Prototype**: Server-side generation, in-memory collision check retry loop (up to 5 attempts), deterministic SHA-256 payload checksum calculation, and server-side RBAC (`ROLE_HR_ADMIN`, `ROLE_SUPER_ADMIN`).
+  - **Implemented in Prototype**: Server-side generation, in-memory atomic collision reservation using `ConcurrentHashMap.putIfAbsent` (up to 10 attempts), deterministic SHA-256 payload checksum calculation, and server-side RBAC (`ROLE_HR_ADMIN`, `ROLE_SUPER_ADMIN`).
   - **Proposed for Production**: Database storage-engine uniqueness constraint (`UNIQUE KEY uq_reference_number`), `@Transactional` ACID persistence, and object-level authorization (ABAC).
 * **Verdict**: **PASSED (Reference Implementation with Documented Production Targets)**
 
@@ -117,16 +118,16 @@ This review provides a strict, evidence-based evaluation of the Java 17 + Spring
 ### Criterion 9: Data Persistence Model (In-Memory Prototype vs RDBMS)
 * **Code Location**: [`schema.sql`](backend-remediation-service/src/main/resources/schema.sql) & [`application.yml`](backend-remediation-service/src/main/resources/application.yml)
 * **Analysis**:
-  - Inquiries, applications, and documents are stored in thread-safe `ConcurrentHashMap` collections for self-contained local evaluation without requiring external database dependencies.
+  - Inquiries, applications, and documents are stored in thread-safe `ConcurrentHashMap` collections using atomic `putIfAbsent` operations for duplicate checks and collision handling.
   - Production MySQL DDL script (`src/main/resources/schema.sql`) provides full schema with InnoDB engine, foreign keys, unique constraint on `(email, job_id)`, and indexing.
-  - Configured with `mysql` Spring profile (`--spring.profiles.active=mysql`).
+  - Configured with `mysql` Spring profile (`--spring.profiles.active=mysql`), requiring credentials via `SPRING_DATASOURCE_USERNAME` and `SPRING_DATASOURCE_PASSWORD` (plain-text fallbacks removed) and enforcing `sslMode=REQUIRED`.
   - **Important Disclosure**: Active Spring Data JPA repositories and live database connections are NOT currently integrated into the reference service.
 * **Verdict**: **VERIFIED AS IN-MEMORY REFERENCE WITH COMPLETE RDBMS DDL (NOT LIVE JPA)**
 
 ---
 
 ### Criterion 10: Test Suite Validity & Assertion Depth
-* **Code Location**: `src/test/java/com/cynbit/remediation/` (6 Test Classes, 26 Total Tests)
+* **Code Location**: `src/test/java/com/cynbit/remediation/` (7 Test Classes, 30 Total Tests)
 * **Test Coverage Summary**:
   1. `RateLimiterConcurrencyTest` (5 tests):
      - 50 concurrent threads on capacity 10 with atomic exhaustion and zero race conditions.
@@ -141,7 +142,7 @@ This review provides a strict, evidence-based evaluation of the Java 17 + Spring
      - Logout expires cookie (`Max-Age=0`) and blacklists token.
      - Rejects invalid credentials with 401 ProblemDetail.
   3. `CareerControllerTest` (2 tests):
-     - Submits application, verifies status retrieval, and rejects duplicate submissions with 409 Conflict.
+     - Submits application, verifies minimal status retrieval with high-entropy token, and rejects duplicate submissions with 409 Conflict.
      - Blocks unauthorized HTTP methods (e.g. `DELETE`) with 401 Unauthorized.
   4. `InquiryControllerTest` (2 tests):
      - Accepts valid inquiries with 201 Created.
@@ -160,7 +161,12 @@ This review provides a strict, evidence-based evaluation of the Java 17 + Spring
      - Generates valid reference number matching canonical format.
      - Demonstrates collision resistance across 10,000 references.
      - Computes deterministic SHA-256 payload checksums.
-* **Verdict**: **PASSED (26/26 Genuine Tests)**
+  7. `ApplicationServiceTest` (4 tests):
+     - Generates high-entropy tracking token (`trk_...`) and withholds candidate PII from public status response.
+     - Enforces atomic deduplication using `putIfAbsent` against concurrent duplicate submissions.
+     - Atomically logs document references with collision retry using `putIfAbsent`.
+     - Validates that intern roster and submission records are explicitly labeled as synthetic demonstration data.
+* **Verdict**: **PASSED (30/30 Genuine Tests)**
 
 ---
 
@@ -172,11 +178,28 @@ This review provides a strict, evidence-based evaluation of the Java 17 + Spring
 [INFO]  T E S T S
 [INFO] -------------------------------------------------------
 [INFO] Running com.cynbit.remediation.config.RateLimiterConcurrencyTest
-[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.948 s
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.722 s
 [INFO] Running com.cynbit.remediation.controller.AuthControllerTest
-[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 15.00 s
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.989 s
 [INFO] Running com.cynbit.remediation.controller.CareerControllerTest
-[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.109 s
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.142 s
+[INFO] Running com.cynbit.remediation.controller.InquiryControllerTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.048 s
+[INFO] Running com.cynbit.remediation.security.JwtTokenProviderTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.037 s
+[INFO] Running com.cynbit.remediation.service.ApplicationServiceTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s
+[INFO] Running com.cynbit.remediation.service.DocumentReferenceServiceTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.182 s
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 30, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+```
 [INFO] Running com.cynbit.remediation.controller.InquiryControllerTest
 [INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.044 s
 [INFO] Running com.cynbit.remediation.security.JwtTokenProviderTest

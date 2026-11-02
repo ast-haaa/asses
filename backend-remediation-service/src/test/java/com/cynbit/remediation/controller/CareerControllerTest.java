@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -29,11 +30,11 @@ class CareerControllerTest {
     private ObjectMapper objectMapper;
 
     @Test
-    @DisplayName("Should submit application, retrieve status, and reject duplicate submissions with 409 Conflict")
+    @DisplayName("Should submit application, retrieve status with minimal data, and reject duplicate submissions with 409 Conflict")
     void shouldHandleApplicationAndRejectDuplicates() throws Exception {
         CareerApplicationRequest request = new CareerApplicationRequest();
         request.setFullName("Priya Sharma");
-        request.setEmail("priya.sharma.test@cynbit-candidate.com");
+        request.setEmail("candidate.test@example.local");
         request.setPhone("+919876543210");
         request.setWhatsapp("+919876543210");
         request.setDob("2002-04-12");
@@ -54,17 +55,26 @@ class CareerControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
                 .andExpect(jsonPath("$.data.applicationId").exists())
+                .andExpect(jsonPath("$.data.trackingToken").exists())
                 .andExpect(jsonPath("$.data.trackingUrl").exists())
+                .andExpect(jsonPath("$.data.email").doesNotExist())
+                .andExpect(jsonPath("$.data.candidateName").doesNotExist())
                 .andReturn();
 
         String appId = objectMapper.readTree(result.getResponse().getContentAsString())
                 .get("data").get("applicationId").asText();
 
+        // High-entropy tracking token check (must start with trk_)
+        assertTrue(appId.startsWith("trk_"), "Application ID must be a high-entropy tracking token starting with trk_");
+
         // Verify status retrieval via GET /api/v1/careers/{jobId}/applications/{applicationId}
+        // CRITICAL PRIVACY ASSERTION: Only minimum lifecycle status is returned; email and personal info are omitted.
         mockMvc.perform(get("/api/v1/careers/backend-developer-intern/applications/" + appId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.applicationId").value(appId))
-                .andExpect(jsonPath("$.data.email").value("priya.sharma.test@cynbit-candidate.com"));
+                .andExpect(jsonPath("$.data.status").value("SUBMITTED"))
+                .andExpect(jsonPath("$.data.email").doesNotExist())
+                .andExpect(jsonPath("$.data.candidateName").doesNotExist());
 
         // Duplicate attempt: 409 Conflict with trackingUrl property
         mockMvc.perform(post("/api/v1/careers/backend-developer-intern/applications")

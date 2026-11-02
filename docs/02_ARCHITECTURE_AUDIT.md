@@ -151,14 +151,9 @@ The following Server Actions were empirically identified and extracted from publ
 - **Identified Parameters for `fetchDocumentByRef`**:
   - `refNumber` (`string`): Reference string passed to fetch previous document state (triggered when URL contains `?redownload=...`).
 
-#### 5. Intern & Submission Management Actions
-- **Source Verification**: Documented in [`EVIDENCE_LOG.md § 3.4`](../evidence/EVIDENCE_LOG.md#34-administrative-management-rpc-actions)
-- `adminGetInterns`: Retrieves registered intern roster.
-- `adminCreateIntern`: Creates intern profile.
-- `adminCreateTask`: Dispatches task deliverables.
-- `adminGetSubmissions`: Fetches EOD submissions.
-- `adminUpdateSubmissionStatus`: Updates single submission review state.
-- `adminBatchUpdateSubmissionStatus`: Batch updates multiple submissions.
+#### 5. Proposed Administrative Management Endpoints
+- **Architectural Scope**: The reference remediation backend replaces client-coupled Next.js RPC calls with standard RESTful endpoints (`/api/v1/portal/interns/**`) governed by server-side Spring Security RBAC (`ROLE_SUPER_ADMIN`, `ROLE_HR_ADMIN`, `ROLE_MENTOR`).
+- **Demonstration Capabilities**: Exposes intern roster querying and deliverable review workflows using synthetic demonstration data fixtures, eliminating frontend coupling and private RPC dependencies.
 
 ---
 

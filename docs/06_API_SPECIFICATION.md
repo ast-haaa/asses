@@ -103,9 +103,11 @@ Handles multi-field intern and engineer candidate applications.
   "status": "SUCCESS",
   "message": "Application submitted successfully.",
   "data": {
-    "applicationId": "app_01HZX89AB321",
-    "isDuplicate": false,
-    "trackingUrl": "https://portal.cynbit.in/status/app_01HZX89AB321",
+    "applicationId": "trk_9k3FmP18xZ0qL4Wv82B",
+    "trackingToken": "trk_9k3FmP18xZ0qL4Wv82B",
+    "jobId": "backend-developer-intern",
+    "status": "SUBMITTED",
+    "trackingUrl": "https://portal.cynbit.in/status/trk_9k3FmP18xZ0qL4Wv82B",
     "submittedAt": "2026-11-01T11:45:00Z"
   }
 }
@@ -121,7 +123,7 @@ Authenticates administrative personnel with individual user accounts.
 #### Request Body
 ```json
 {
-  "username": "hr.admin@cynbit.in",
+  "username": "hr.admin@example.local",
   "password": "StrongSecretPassword#2026"
 }
 ```
@@ -138,8 +140,8 @@ Content-Type: application/json
   "message": "Authentication successful.",
   "data": {
     "userId": "usr_99812",
-    "username": "hr.admin@cynbit.in",
-    "role": "HR_ADMIN",
+    "username": "hr.admin@example.local",
+    "role": "ROLE_HR_ADMIN",
     "expiresIn": 28800
   }
 }

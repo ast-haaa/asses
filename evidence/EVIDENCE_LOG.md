@@ -147,17 +147,6 @@ const submitInquiryAction = (0, d.createServerReference)(
 * **Submitted Fields**: Personal information, social/portfolio links, address, and JSON-serialized `educationData` array.
 * **Observed Return Shape**: `{ success: boolean, isDuplicate?: boolean, trackingUrl?: string, error?: string }`.
 
-### 3.4 Administrative Management RPC Actions
-* **Target Context**: `portal.cynbit.in/dashboard/*`
-* **Observed Server Actions**:
-  - `adminGetInterns` (`[ACTION_ID_ADMIN_GET_INTERNS]`): Queries intern roster.
-  - `adminCreateIntern` (`[ACTION_ID_ADMIN_CREATE_INTERN]`): Dispatches intern profile registration.
-  - `adminCreateTask` (`[ACTION_ID_ADMIN_CREATE_TASK]`): Dispatches task assignment.
-  - `adminGetSubmissions` (`[ACTION_ID_ADMIN_GET_SUBMISSIONS]`): Retrieves end-of-day intern submissions.
-  - `adminUpdateSubmissionStatus` (`[ACTION_ID_ADMIN_UPDATE_STATUS]`): Single submission review update.
-  - `adminBatchUpdateSubmissionStatus` (`[ACTION_ID_ADMIN_BATCH_UPDATE]`): Batch submission review updates.
-* **Client Registration Pattern**: Registered using the same `createServerReference` pattern as detailed in § 3.1.
-
 ---
 
 ## 4. Portal Shared-Key Authentication Pattern

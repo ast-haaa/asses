@@ -17,6 +17,11 @@ spring:
 # Security & JWT Configuration
 app:
   security:
+    dev-seed:
+      enabled: ${DEV_SEED_ENABLED:false}
+      username: ${DEV_SEED_USERNAME:dev-admin@example.local}
+      password: ${DEV_SEED_PASSWORD:}
+      role: ${DEV_SEED_ROLE:ROLE_HR_ADMIN}
     jwt:
       secret: ${JWT_SECRET}
       expiration-ms: ${JWT_EXPIRATION_MS:28800000} # 8 hours default
@@ -39,14 +44,18 @@ logging:
 
 ---
 # MySQL Profile Configuration (Activated via --spring.profiles.active=mysql)
+# PRODUCTION SECURITY NOTICE:
+# 1. Credentials MUST be supplied via environment variables; fallback plain-text credentials are prohibited.
+# 2. TLS/SSL encryption is enforced (sslMode=REQUIRED). Do not downgrade to useSSL=false in production.
+# 3. Restrict database user permissions to least privilege (SELECT, INSERT, UPDATE) for runtime services.
 spring:
   config:
     activate:
       on-profile: mysql
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/cynbit_remediation_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
-    username: ${SPRING_DATASOURCE_USERNAME:root}
-    password: ${SPRING_DATASOURCE_PASSWORD:password}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/cynbit_remediation_db?sslMode=REQUIRED&serverTimezone=UTC}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   sql:
     init:

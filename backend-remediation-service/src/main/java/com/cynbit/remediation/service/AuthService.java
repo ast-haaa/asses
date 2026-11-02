@@ -6,16 +6,21 @@ import com.cynbit.remediation.exception.BusinessException;
 import com.cynbit.remediation.security.JwtTokenProvider;
 import com.cynbit.remediation.security.SecurityUser;
 import com.cynbit.remediation.security.UserRole;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class AuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
@@ -25,20 +30,44 @@ public class AuthService {
     public AuthService(
             PasswordEncoder passwordEncoder,
             JwtTokenProvider jwtTokenProvider,
-            @Value("${app.security.jwt.expiration-ms:28800000}") long expirationMs) {
+            @Value("${app.security.jwt.expiration-ms:28800000}") long expirationMs,
+            @Value("${app.security.dev-seed.enabled:false}") boolean devSeedEnabled,
+            @Value("${app.security.dev-seed.username:}") String devUsername,
+            @Value("${app.security.dev-seed.password:}") String devPassword,
+            @Value("${app.security.dev-seed.role:ROLE_HR_ADMIN}") String devRole) {
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
         this.expirationMs = expirationMs;
 
-        // Initialize production-like administrative accounts with strong BCrypt hashes
-        registerUser("usr_super_01", "super.admin@cynbit.in", "Admin@Cynbit#2026", UserRole.ROLE_SUPER_ADMIN);
-        registerUser("usr_hr_01", "hr.admin@cynbit.in", "HrAdmin#Cynbit2026", UserRole.ROLE_HR_ADMIN);
-        registerUser("usr_mentor_01", "mentor@cynbit.in", "Mentor#Cynbit2026", UserRole.ROLE_MENTOR);
+        if (devSeedEnabled) {
+            if (StringUtils.hasText(devUsername) && StringUtils.hasText(devPassword)) {
+                log.warn("DEVELOPMENT NOTICE: Explicit development seed enabled for user [{}]. Never enable in production.", devUsername);
+                try {
+                    UserRole role = UserRole.valueOf(devRole.trim());
+                    registerUser("usr_dev_seed", devUsername.trim(), devPassword.trim(), role);
+                } catch (IllegalArgumentException e) {
+                    log.error("Invalid dev-seed role configured [{}], default to ROLE_HR_ADMIN", devRole);
+                    registerUser("usr_dev_seed", devUsername.trim(), devPassword.trim(), UserRole.ROLE_HR_ADMIN);
+                }
+            } else {
+                log.info("Development seed flag is active but dev-seed credentials are not configured. In-memory registry initialized empty.");
+            }
+        } else {
+            log.info("Standard mode: In-memory user registry initialized empty. Administrative accounts must be configured via authoritative identity provider or test fixtures.");
+        }
     }
 
-    private void registerUser(String id, String username, String rawPassword, UserRole role) {
+    /**
+     * Registers a security user into the in-memory registry.
+     * Used for test fixtures, dynamic onboarding, or development seeding.
+     */
+    public void registerUser(String id, String username, String rawPassword, UserRole role) {
         String encodedPassword = passwordEncoder.encode(rawPassword);
-        userRegistry.put(username.toLowerCase(), new SecurityUser(id, username, encodedPassword, role));
+        userRegistry.put(username.toLowerCase().trim(), new SecurityUser(id, username.trim(), encodedPassword, role));
+    }
+
+    public void clearUsers() {
+        userRegistry.clear();
     }
 
     public AuthResponse login(LoginRequest request) {

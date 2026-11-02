@@ -2,8 +2,11 @@ package com.cynbit.remediation.controller;
 
 import com.cynbit.remediation.dto.request.DocumentLogRequest;
 import com.cynbit.remediation.dto.request.LoginRequest;
+import com.cynbit.remediation.security.UserRole;
+import com.cynbit.remediation.service.AuthService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.Cookie;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,10 +36,19 @@ class AuthControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private AuthService authService;
+
+    @BeforeEach
+    void setUp() {
+        authService.clearUsers();
+        authService.registerUser("usr_test_hr", "hr.test@example.local", "TestHrPass#2026!", UserRole.ROLE_HR_ADMIN);
+    }
+
     @Test
     @DisplayName("Should set HttpOnly, Secure, SameSite=Strict cookie on login and NOT expose JWT in JSON body")
     void shouldSetSecureHttpOnlyCookieAndNotExposeJwtInJsonOnLogin() throws Exception {
-        LoginRequest loginRequest = new LoginRequest("hr.admin@cynbit.in", "HrAdmin#Cynbit2026");
+        LoginRequest loginRequest = new LoginRequest("hr.test@example.local", "TestHrPass#2026!");
 
         MvcResult loginResult = mockMvc.perform(post("/api/v1/portal/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -47,7 +59,7 @@ class AuthControllerTest {
                 // CRITICAL SECURITY ASSERTION: JWT must NEVER be returned in response JSON
                 .andExpect(jsonPath("$.data.token").doesNotExist())
                 .andExpect(jsonPath("$.data.userId").exists())
-                .andExpect(jsonPath("$.data.username").value("hr.admin@cynbit.in"))
+                .andExpect(jsonPath("$.data.username").value("hr.test@example.local"))
                 .andExpect(jsonPath("$.data.role").value("ROLE_HR_ADMIN"))
                 .andReturn();
 
@@ -72,7 +84,7 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.title").value("Unauthorized"));
 
         // 2. Authenticate to obtain session cookie
-        LoginRequest loginRequest = new LoginRequest("hr.admin@cynbit.in", "HrAdmin#Cynbit2026");
+        LoginRequest loginRequest = new LoginRequest("hr.test@example.local", "TestHrPass#2026!");
         MvcResult loginResult = mockMvc.perform(post("/api/v1/portal/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
@@ -85,7 +97,7 @@ class AuthControllerTest {
         // 3. Authenticated request to /me with cookie must succeed
         mockMvc.perform(get("/api/v1/portal/auth/me").cookie(sessionCookie))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.username").value("hr.admin@cynbit.in"))
+                .andExpect(jsonPath("$.data.username").value("hr.test@example.local"))
                 .andExpect(jsonPath("$.data.role").value("ROLE_HR_ADMIN"));
     }
 
@@ -93,7 +105,7 @@ class AuthControllerTest {
     @DisplayName("Should enforce CSRF protection on state-changing requests using cookie authentication")
     void shouldEnforceCsrfProtectionOnStateChangingRequests() throws Exception {
         // 1. Login to obtain session cookie
-        LoginRequest loginRequest = new LoginRequest("hr.admin@cynbit.in", "HrAdmin#Cynbit2026");
+        LoginRequest loginRequest = new LoginRequest("hr.test@example.local", "TestHrPass#2026!");
         MvcResult loginResult = mockMvc.perform(post("/api/v1/portal/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
@@ -130,7 +142,7 @@ class AuthControllerTest {
     @Test
     @DisplayName("Should clear session cookie and invalidate token in blacklist upon logout")
     void shouldClearCookieAndInvalidateTokenUponLogout() throws Exception {
-        LoginRequest loginRequest = new LoginRequest("hr.admin@cynbit.in", "HrAdmin#Cynbit2026");
+        LoginRequest loginRequest = new LoginRequest("hr.test@example.local", "TestHrPass#2026!");
         MvcResult loginResult = mockMvc.perform(post("/api/v1/portal/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
@@ -160,7 +172,7 @@ class AuthControllerTest {
     @Test
     @DisplayName("Should reject invalid login credentials with 401 Unauthorized")
     void shouldRejectInvalidCredentials() throws Exception {
-        LoginRequest loginRequest = new LoginRequest("hr.admin@cynbit.in", "WrongPassword#123");
+        LoginRequest loginRequest = new LoginRequest("hr.test@example.local", "WrongPassword#123");
 
         mockMvc.perform(post("/api/v1/portal/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

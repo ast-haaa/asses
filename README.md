@@ -196,14 +196,19 @@ java -jar target/cynbit-backend-remediation-1.0.0.jar
 
 ### Architectural Disclaimers & Implementation Status
 - **Independent Architecture**: The Spring Boot service (`backend-remediation-service`) is an independent reference architecture, NOT a modification, fork, or live deployment of Cynbit's Next.js infrastructure.
-- **Persistence Status**: The application currently evaluates using thread-safe in-memory collections (`ConcurrentHashMap`) for standalone evaluation. It does NOT maintain a live connection to a running MySQL instance by default. A complete production-ready DDL script is provided in [`schema.sql`](backend-remediation-service/src/main/resources/schema.sql) and can be activated via `--spring.profiles.active=mysql` once a MySQL 8.0+ server is provisioned. Live Spring Data JPA repositories are not currently integrated.
+- **Persistence Status**: The application currently evaluates using thread-safe in-memory collections (`ConcurrentHashMap`) with atomic `putIfAbsent` operations for duplicate application detection and document collision handling. It does NOT maintain a live connection to a running MySQL instance or integrate Spring Data JPA repositories. A complete production-ready DDL script is provided in [`schema.sql`](backend-remediation-service/src/main/resources/schema.sql) for production deployment planning. When activating the MySQL profile (`--spring.profiles.active=mysql`), database credentials must be supplied via `SPRING_DATASOURCE_USERNAME` and `SPRING_DATASOURCE_PASSWORD` environment variables (fallback defaults are prohibited, and TLS `sslMode=REQUIRED` is enforced).
+- **Career Application Privacy**: The public career application endpoint returns strictly minimal lifecycle status (jobId, status, timestamp) keyed by a high-entropy tracking token (`trk_...`). Candidate names, email addresses, and personal details are strictly withheld from public queries.
 - **Token Blacklist Scope**: Token revocation operates via an in-memory `TokenBlacklistService`. Blacklisted tokens are evicted naturally at expiration or cleared upon application restart. In a distributed multi-instance deployment, replace this with a shared Redis store with TTL eviction.
 - **Rate Limiter Scope**: In-memory token buckets track client IPs per JVM instance. For clustered deployments behind load balancers, replace in-memory buckets with Redis (`Bucket4j-redis` or `Redisson`).
 
-### Default Test Credentials (Configured in AuthService)
-- **Super Admin**: `super.admin@cynbit.in` / `Admin@Cynbit#2026` (`ROLE_SUPER_ADMIN`)
-- **HR Admin**: `hr.admin@cynbit.in` / `HrAdmin#Cynbit2026` (`ROLE_HR_ADMIN`)
-- **Mentor**: `mentor@cynbit.in` / `Mentor#Cynbit2026` (`ROLE_MENTOR`)
+### Authentication & Development Seeding
+- **Zero Hardcoded Credentials**: Fixed administrative accounts, production-like passwords, and real company email addresses have been completely removed from `AuthService.java`.
+- **Development-Only Seed Mechanism**: For local demonstration, an explicit seed can be activated via environment variables:
+  - `DEV_SEED_ENABLED=true`
+  - `DEV_SEED_USERNAME=dev-admin@example.local`
+  - `DEV_SEED_PASSWORD=<your-secure-password>`
+  - `DEV_SEED_ROLE=ROLE_HR_ADMIN` (or `ROLE_SUPER_ADMIN`, `ROLE_MENTOR`)
+- **Automated Test Fixtures**: Automated unit and integration tests inject synthetic test users dynamically via `AuthService.registerUser(...)` using non-routable `@example.local` identities.
 
 ---
 

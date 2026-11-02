@@ -33,14 +33,14 @@ class JwtTokenProviderTest {
     @Test
     @DisplayName("Should generate valid token and extract user claims")
     void shouldGenerateAndExtractClaims() {
-        SecurityUser user = new SecurityUser("usr_100", "hr.admin@cynbit.in", "dummy", UserRole.ROLE_HR_ADMIN);
+        SecurityUser user = new SecurityUser("usr_100", "hr.test@example.local", "dummy", UserRole.ROLE_HR_ADMIN);
 
         String token = jwtTokenProvider.generateToken(user);
         assertNotNull(token);
         assertTrue(token.contains("."));
 
         assertTrue(jwtTokenProvider.validateToken(token));
-        assertEquals("hr.admin@cynbit.in", jwtTokenProvider.extractUsername(token));
+        assertEquals("hr.test@example.local", jwtTokenProvider.extractUsername(token));
         assertEquals("ROLE_HR_ADMIN", jwtTokenProvider.extractRole(token));
         assertEquals("usr_100", jwtTokenProvider.extractUserId(token));
         assertEquals("cynbit.in", jwtTokenProvider.extractIssuer(token));
@@ -49,7 +49,7 @@ class JwtTokenProviderTest {
     @Test
     @DisplayName("Should reject tampered token signatures")
     void shouldRejectTamperedToken() {
-        SecurityUser user = new SecurityUser("usr_200", "mentor@cynbit.in", "dummy", UserRole.ROLE_MENTOR);
+        SecurityUser user = new SecurityUser("usr_200", "mentor.test@example.local", "dummy", UserRole.ROLE_MENTOR);
         String token = jwtTokenProvider.generateToken(user);
 
         // Tamper with payload
@@ -63,7 +63,7 @@ class JwtTokenProviderTest {
     @DisplayName("Should reject expired tokens")
     void shouldRejectExpiredToken() {
         JwtTokenProvider expiredProvider = new JwtTokenProvider(objectMapper, tokenBlacklistService, secret, -1000L, issuer);
-        SecurityUser user = new SecurityUser("usr_300", "expired@cynbit.in", "dummy", UserRole.ROLE_HR_ADMIN);
+        SecurityUser user = new SecurityUser("usr_300", "expired.test@example.local", "dummy", UserRole.ROLE_HR_ADMIN);
 
         String expiredToken = expiredProvider.generateToken(user);
         assertFalse(jwtTokenProvider.validateToken(expiredToken));
@@ -134,7 +134,7 @@ class JwtTokenProviderTest {
     @Test
     @DisplayName("Should reject blacklisted tokens")
     void shouldRejectBlacklistedToken() {
-        SecurityUser user = new SecurityUser("usr_400", "user@cynbit.in", "dummy", UserRole.ROLE_SUPER_ADMIN);
+        SecurityUser user = new SecurityUser("usr_400", "user.test@example.local", "dummy", UserRole.ROLE_SUPER_ADMIN);
         String token = jwtTokenProvider.generateToken(user);
 
         assertTrue(jwtTokenProvider.validateToken(token));
@@ -174,7 +174,7 @@ class JwtTokenProviderTest {
     private Map<String, Object> createValidPayloadMap() {
         Map<String, Object> payload = new HashMap<>();
         long now = System.currentTimeMillis();
-        payload.put("sub", "valid.user@cynbit.in");
+        payload.put("sub", "user.test@example.local");
         payload.put("userId", "usr_999");
         payload.put("role", "ROLE_HR_ADMIN");
         payload.put("iss", "cynbit.in");

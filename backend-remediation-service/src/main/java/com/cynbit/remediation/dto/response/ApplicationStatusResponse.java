@@ -2,28 +2,38 @@ package com.cynbit.remediation.dto.response;
 
 import java.time.Instant;
 
+/**
+ * Public response DTO returning strictly minimum application status data.
+ * CRITICAL PRIVACY CONTROL: Does NOT expose candidate email, full name, phone number,
+ * or other personal identifiable information (PII) over public status queries.
+ */
 public class ApplicationStatusResponse {
 
+    private String trackingToken;
     private String applicationId;
     private String jobId;
-    private String candidateName;
-    private String email;
-    private boolean duplicate;
     private String trackingUrl;
     private String status;
     private Instant submittedAt;
 
     public ApplicationStatusResponse() {}
 
-    public ApplicationStatusResponse(String applicationId, String jobId, String candidateName, String email, boolean duplicate, String trackingUrl, String status, Instant submittedAt) {
-        this.applicationId = applicationId;
+    public ApplicationStatusResponse(String trackingToken, String jobId, String trackingUrl, String status, Instant submittedAt) {
+        this.trackingToken = trackingToken;
+        this.applicationId = trackingToken; // Aliased for client backwards compatibility
         this.jobId = jobId;
-        this.candidateName = candidateName;
-        this.email = email;
-        this.duplicate = duplicate;
         this.trackingUrl = trackingUrl;
         this.status = status;
         this.submittedAt = submittedAt;
+    }
+
+    public String getTrackingToken() {
+        return trackingToken;
+    }
+
+    public void setTrackingToken(String trackingToken) {
+        this.trackingToken = trackingToken;
+        this.applicationId = trackingToken;
     }
 
     public String getApplicationId() {
@@ -32,6 +42,7 @@ public class ApplicationStatusResponse {
 
     public void setApplicationId(String applicationId) {
         this.applicationId = applicationId;
+        this.trackingToken = applicationId;
     }
 
     public String getJobId() {
@@ -40,30 +51,6 @@ public class ApplicationStatusResponse {
 
     public void setJobId(String jobId) {
         this.jobId = jobId;
-    }
-
-    public String getCandidateName() {
-        return candidateName;
-    }
-
-    public void setCandidateName(String candidateName) {
-        this.candidateName = candidateName;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public boolean isDuplicate() {
-        return duplicate;
-    }
-
-    public void setDuplicate(boolean duplicate) {
-        this.duplicate = duplicate;
     }
 
     public String getTrackingUrl() {
@@ -90,4 +77,3 @@ public class ApplicationStatusResponse {
         this.submittedAt = submittedAt;
     }
 }
-
