@@ -76,7 +76,7 @@ The following Server Actions were empirically identified and extracted from publ
 
 #### 1. Public Inquiry Submission (`submitInquiry`)
 - **Action Identifier**: `[ACTION_ID_INQUIRY]` (`submitInquiry`)
-- **Source Verification**: Documented in [`EVIDENCE_LOG.md § 3.2`](../evidence/EVIDENCE_LOG.md#32-public-contact-form-submitinquiry) (extracted via [`inspect_chunk.ps1`](../evidence/inspect_chunk.ps1))
+- **Source Verification**: Documented in [`EVIDENCE_LOG.md § 3.2`](../evidence/EVIDENCE_LOG.md#32-public-contact-form-submitinquiry)
 - **Calling Route**: `https://www.cynbit.in/contact`
 - **Identified Request Fields** (`FormData`):
   - `fullName` (`string`, required): Sender's full name.
@@ -92,7 +92,7 @@ The following Server Actions were empirically identified and extracted from publ
 
 #### 2. Candidate Application Submission (`submitCandidateApplication`)
 - **Action Identifier**: `[ACTION_ID_CAREER_APP]` (`submitCandidateApplication`)
-- **Source Verification**: Documented in [`EVIDENCE_LOG.md § 3.3`](../evidence/EVIDENCE_LOG.md#33-candidate-application-form-submitcandidateapplication) (extracted via [`inspect_slug_chunk.ps1`](../evidence/inspect_slug_chunk.ps1))
+- **Source Verification**: Documented in [`EVIDENCE_LOG.md § 3.3`](../evidence/EVIDENCE_LOG.md#33-candidate-application-form-submitcandidateapplication)
 - **Calling Route**: `https://www.cynbit.in/careers/[slug]`
 - **Identified Request Fields** (`FormData`):
   - `jobId` (`string`, required): Targeted opening slug (e.g., `"backend-developer-intern"`).
@@ -141,7 +141,7 @@ The following Server Actions were empirically identified and extracted from publ
 - **Action Identifiers**:
   - `logDocumentToDB`: `[ACTION_ID_DOC_LOG]` (`logDocumentToDB`)
   - `fetchDocumentByRef`: `[ACTION_ID_DOC_FETCH]` (`fetchDocumentByRef`)
-- **Source Verification**: Documented in [`EVIDENCE_LOG.md § 2`](../evidence/EVIDENCE_LOG.md#2-client-side-document-reference-construction) (extracted via [`inspect_offer_letter.ps1`](../evidence/inspect_offer_letter.ps1))
+- **Source Verification**: Documented in [`EVIDENCE_LOG.md § 2`](../evidence/EVIDENCE_LOG.md#2-client-side-document-reference-construction)
 - **Calling Route**: `https://portal.cynbit.in/dashboard/offer-letter`
 - **Identified Parameters for `logDocumentToDB`**:
   - `docType` (`string`): e.g. `"Internship Offer"` or `"Offer Letter"`.
@@ -152,7 +152,7 @@ The following Server Actions were empirically identified and extracted from publ
   - `refNumber` (`string`): Reference string passed to fetch previous document state (triggered when URL contains `?redownload=...`).
 
 #### 5. Intern & Submission Management Actions
-- **Source Verification**: Documented in [`EVIDENCE_LOG.md § 3`](../evidence/EVIDENCE_LOG.md#3-server-action-rpc-transport--form-serialization) (extracted via [`inspect_interns.ps1`](../evidence/inspect_interns.ps1) and [`inspect_submissions.ps1`](../evidence/inspect_submissions.ps1))
+- **Source Verification**: Documented in [`EVIDENCE_LOG.md § 3.4`](../evidence/EVIDENCE_LOG.md#34-administrative-management-rpc-actions)
 - `adminGetInterns`: Retrieves registered intern roster.
 - `adminCreateIntern`: Creates intern profile.
 - `adminCreateTask`: Dispatches task deliverables.
