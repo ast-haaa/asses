@@ -60,8 +60,8 @@ href: \"/portal/dashboard/interns/submissions\"
 
 ### Finding 1.2: Client-Side Document Reference Construction with Standard Pseudo-Randomness
 - **Classification**: Architectural & Cryptographic Design Defect (Medium)
-- **Target Location**: `https://portal.cynbit.in/dashboard/offer-letter` (`page-53e0ab8b941ed906.js`)
-- **Confidence**: 100% (Empirically verified in client bundle)
+- **Target Location**: `https://portal.cynbit.in/dashboard/offer-letter` (Source Chunk: [`evidence/offer_letter_chunk.js`](../evidence/offer_letter_chunk.js))
+- **Confidence**: 100% (Empirically verified in public client bundle)
 
 #### Empirical Code Extraction
 ```javascript
@@ -74,12 +74,37 @@ let o = e || "CB/HR/"
 if (!e) await (0, l.H)(r ? "Internship Offer" : "Offer Letter", o, a.candidateName, a);
 ```
 
-#### Technical Explanation
-- Primary business identifiers (`refNumber`) are generated in the browser using JavaScript's `Math.random()`, which yields only $90,000$ possible suffixes (`10000` to `99999`) and is driven by a non-cryptographic PRNG.
-- The client passes this value directly to the Server Action `logDocumentToDB` (`78b2e843c9bec963...`).
-- **Impact**:
-  - High probability of identifier collisions in enterprise record keeping.
-  - Inverts the authoritative boundary: Clients dictate entity keys to the persistence layer.
+#### Technical Explanation & Mathematical Collision Vulnerability
+1. **Inversion of Control**: The primary business identifier (`refNumber`) is synthesized entirely in the client's browser JavaScript and passed upstream to the `logDocumentToDB` Server Action (`78b2e843c9bec963...`). The backend client does not authoritatively dictate the primary business key.
+2. **Predictability & Finite Keyspace**: The suffix is constrained to a 5-digit integer between $10,000$ and $99,999$, providing a keyspace of exactly $90,000$ possibilities.
+3. **Collision Vulnerability via Birthday Paradox**:
+   Using the standard collision approximation formula:
+   $$p \approx 1 - e^{-\frac{k^2}{2N}}$$
+   where $N = 90,000$:
+   - For $k = 100$ issued documents, the collision probability is already $\approx 5.4\%$.
+   - For $k = 354$ documents, the collision probability reaches **$50.0\%$**.
+   In an active HR environment generating offer letters, joining kits, and training certificates, identifier collisions will inevitably overwrite records or cause fatal database key violations.
+4. **Non-Cryptographic PRNG**: `Math.random()` is deterministic and not cryptographically secure, allowing potential internal or external observers to predict sequential identifiers if internal state is deduced.
+
+#### Recommended Enterprise Remediation Workflow
+An enterprise document lifecycle requires:
+1. **Server-Authoritative Generation**: The server generates the reference number upon receipt of an authorized document creation request.
+2. **CSPRNG Entropy**: Suffixes generated via a Cryptographically Secure Pseudo-Random Number Generator (CSPRNG, such as Java's `SecureRandom`) across an unambiguous character set (such as Crockford Base32), providing $> 40\text{ bits}$ of entropy ($> 10^{12}$ combinations).
+3. **Collision Handling**: An active retry loop with collision detection before record insertion.
+4. **Database Uniqueness Enforcement**: A strict database unique constraint (`UNIQUE KEY uq_reference_number (reference_number)`) to ensure atomic uniqueness at the storage engine level.
+5. **Transactional Persistence**: Atomic `@Transactional` database persistence ensuring document generation, reference allocation, and audit logs are committed together.
+6. **Object-Level Authorization**: Enforcing role checks (`ROLE_HR_ADMIN`, `ROLE_SUPER_ADMIN`) or candidate ownership checks when resolving documents by reference number, preventing Insecure Direct Object References (IDOR).
+
+#### Implementation Status Division
+- **Implemented in Reference Service (`backend-remediation-service`)**:
+  - Server-authoritative generation in [`DocumentReferenceService.java`](file:///e:/Majduri/WebDev/backend-remediation-service/src/main/java/com/cynbit/remediation/service/DocumentReferenceService.java) using `SecureRandom` and Crockford Base32 ($32^8 \approx 1.099 \times 10^{12}$ combinations).
+  - Programmatic collision check and retry loop (up to 5 retries against in-memory store).
+  - SHA-256 payload checksum computation for tamper detection.
+  - Server-side role authorization requiring `ROLE_HR_ADMIN` or `ROLE_SUPER_ADMIN` on `POST /api/v1/portal/documents`.
+- **Proposed for Production Integration (Not Yet Integrated in Live Prototype)**:
+  - Storage-engine uniqueness constraint (defined in [`schema.sql`](file:///e:/Majduri/WebDev/backend-remediation-service/src/main/resources/schema.sql) but awaiting RDBMS integration).
+  - Database transactional persistence (`@Transactional` over JPA/Hibernate).
+  - Candidate-specific object-level authorization (ABAC) linking document access to verified employee/applicant identity.
 
 ---
 

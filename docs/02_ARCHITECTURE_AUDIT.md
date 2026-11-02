@@ -54,19 +54,129 @@ Discovered via `robots.txt` redirect directive (`Disallow: /portal/`):
 
 ## 4. Discovered API & Server Action RPC Interfaces
 
-The application relies on Next.js Server Actions over HTTP POST rather than conventional REST endpoints (`/api/*`). The following Server Action references and operational signatures were extracted from client webpack manifests:
+### 4.1 Observable Next.js Server Action RPC Paradigm
+Passive analysis of public network responses confirms that the application does not expose traditional RESTful endpoints (requests to `/api/*` return standard Next.js 404 HTML responses). Instead, all public and administrative state-changing operations are dispatched via **Next.js Server Actions** executing over HTTP `POST` requests.
 
-| Server Action Identifier | Action ID Hash | Route Context | Observable Parameters | Observed Client Payload Response |
-| :--- | :--- | :--- | :--- | :--- |
-| `submitInquiry` | `40247ba4465344b3...` | `/contact` | `fullName`, `email`, `company`, `industry`, `message` | `{ success: boolean }` |
-| `submitCandidateApplication` | `40645a00e04f6854...` | `/careers/[slug]` | `jobId`, `fullName`, `email`, `phone`, `whatsapp`, `dob`, `gender`, `noticePeriod`, `skills`, `currentCity`, `permanentAddress`, `portfolioUrl`, `linkedinUrl`, `professionalProfileUrl`, `message`, `agreedToTerms`, `educationData` | `{ success: boolean, isDuplicate: boolean, trackingUrl: string, error: string }` |
-| `loginToPortal` | `40d93da1cc26de4e...` | `portal.cynbit.in/` | `password` | `{ success: boolean, error: string }` |
-| `adminGetInterns` | `00162e117247af97...` | `/dashboard/interns` | None (Session context) | Array of intern records |
-| `adminCreateIntern` | `40bbe4bc0e325f31...` | `/dashboard/interns` | Intern profile fields | `{ success: boolean, error: string }` |
-| `adminCreateTask` | `406f95b4b6209de5...` | `/dashboard/interns` | Task title, description, deadline | `{ success: boolean, error: string }` |
-| `adminGetSubmissions` | `00c08cb87bdbc6bd...` | `.../submissions` | None | List of daily deliverables |
-| `adminUpdateSubmissionStatus` | `70e82d7f651d07f2...` | `.../submissions` | `submissionId`, `status` | `{ success: boolean }` |
-| `adminBatchUpdateSubmissionStatus`| `70d909e95734c649...` | `.../submissions` | `submissionIds[]`, `status` | `{ success: boolean }` |
-| `fetchDocumentByRef` | `40244e9a6ff014cf...` | `.../offer-letter` | `referenceId` | Document payload metadata |
-| `logDocumentToDB` | `78b2e843c9bec963...` | `.../offer-letter` | `docType`, `refNumber`, `candidateName`, `fullData` | `{ success: boolean }` |
+#### Observable Protocol & Transport Behavior
+- **RPC Client Registration**: Client-side bundles register server references using Webpack stubs:
+  ```javascript
+  const actionRef = (0, d.createServerReference)(actionIdHash, d.callServer, void 0, d.findSourceMapURL, exportName);
+  ```
+- **HTTP Transport**:
+  - **Method**: `POST` targeted at the current document path (e.g. `POST /contact` or `POST /careers/backend-developer-intern`).
+  - **Headers**: Includes `Next-Action: <action-id-hash>` indicating the specific server function to invoke.
+  - **Body Payload**: Form data formatted as `multipart/form-data; boundary=...` containing field values and serialized JSON strings.
+  - **Response Format**: Typically returns HTTP `200 OK` wrapping a serialized React Server Component flight chunk or JSON object, even when business-level validation fails (e.g., `{ success: false, error: "..." }`).
+
+---
+
+### 4.2 Detailed Action Breakdown (Extracted from Public Evidence)
+
+The following Server Actions were empirically identified and extracted from public JavaScript bundles in [`evidence/`](../evidence/):
+
+#### 1. Public Inquiry Submission (`submitInquiry`)
+- **Action Identifier Hash**: `40247ba4465344b3386595bab4303317cdcce907df`
+- **Source Chunk**: [`evidence/contact_chunk.js`](../evidence/contact_chunk.js)
+- **Calling Route**: `https://www.cynbit.in/contact`
+- **Identified Request Fields** (`FormData`):
+  - `fullName` (`string`, required): Sender's full name.
+  - `email` (`string`, required): Contact email address.
+  - `company` (`string`, optional): Organization or enterprise name.
+  - `industry` (`string`, optional): Industry vertical (e.g. Fintech, Healthcare).
+  - `message` (`string`, required): Inbound message text.
+- **Observed Response Shape**:
+  ```typescript
+  { success: boolean }
+  ```
+- **Client Handling**: On `success: true`, renders an "Inquiry Received" confirmation state. On `false`, displays fallback text: `"Something went wrong. Please try again or email us directly."`
+
+#### 2. Candidate Application Submission (`submitCandidateApplication`)
+- **Action Identifier Hash**: `40645a00e04f68541170eb8fc5f6fb052cfce904b7`
+- **Source Chunk**: [`evidence/careers_slug_chunk.js`](../evidence/careers_slug_chunk.js)
+- **Calling Route**: `https://www.cynbit.in/careers/[slug]`
+- **Identified Request Fields** (`FormData`):
+  - `jobId` (`string`, required): Targeted opening slug (e.g., `"backend-developer-intern"`).
+  - Personal Details: `fullName`, `email`, `phone`, `whatsapp`, `dob`, `gender`, `noticePeriod`, `skills`, `currentCity`, `permanentAddress`.
+  - Portfolio & Social: `portfolioUrl`, `linkedinUrl`, `professionalProfileUrl`, `message`.
+  - Compliance: `agreedToTerms` (`boolean`).
+  - Synthesized Education: `education` (string concatenated from degree/specialization), `university`, `graduationYear`.
+  - `educationData` (`string`, JSON-serialized array): Detailed array of qualification objects:
+    ```typescript
+    Array<{
+      qualificationLevel: string;
+      degree: string;
+      customDegree?: string;
+      specialization: string;
+      university: string;
+      graduationYear: string;
+      scoreType: string;
+      scoreValue: string;
+      status: string;
+    }>
+    ```
+- **Observed Response Shape**:
+  ```typescript
+  {
+    success: boolean;
+    isDuplicate?: boolean;
+    trackingUrl?: string;
+    error?: string;
+  }
+  ```
+- **Client Handling**: If `success: true`, displays success confirmation. If `isDuplicate: true`, extracts `trackingUrl` to inform the candidate of existing application status. Otherwise displays `error` string.
+
+#### 3. Administrative Portal Login (`loginToPortal`)
+- **Action Identifier Hash**: `40d93da1cc26de4e9c704f5cb1b70a75f85fa32e3d`
+- **Source Chunk**: [`evidence/portal_chunk.js`](../evidence/portal_chunk.js)
+- **Calling Route**: `https://portal.cynbit.in/`
+- **Identified Request Fields** (`FormData`):
+  - `password` (`string`, required): The "Security Key" secret string.
+- **Observed Response Shape**:
+  ```typescript
+  { success: boolean; error?: string }
+  ```
+- **Client Handling**: On `success: true`, triggers client-side router transition to `/dashboard`.
+
+#### 4. Document Reference & Logging Actions (`logDocumentToDB` & `fetchDocumentByRef`)
+- **Action Identifier Hashes**:
+  - `logDocumentToDB`: `78b2e843c9bec963d7ae83d753ba5797d36acf8f34`
+  - `fetchDocumentByRef`: `40244e9a6ff014cf50fb7ae4db6efa3442036103dd`
+- **Source Chunk**: [`evidence/offer_letter_chunk.js`](../evidence/offer_letter_chunk.js)
+- **Calling Route**: `https://portal.cynbit.in/dashboard/offer-letter`
+- **Identified Parameters for `logDocumentToDB`**:
+  - `docType` (`string`): e.g. `"Internship Offer"` or `"Offer Letter"`.
+  - `refNumber` (`string`): Client-constructed reference (e.g. `CB/HR/INT/2026/84920`).
+  - `candidateName` (`string`): Candidate's full name.
+  - `fullData` (`object`): Payload containing `employmentType`, `address`, `jobTitle`, `joiningDate`, `salary`, `duration`, `reportingTo`, `validUntil`.
+- **Identified Parameters for `fetchDocumentByRef`**:
+  - `refNumber` (`string`): Reference string passed to fetch previous document state (triggered when URL contains `?redownload=...`).
+
+#### 5. Intern & Submission Management Actions
+- **Identified in Chunks**: [`evidence/interns_chunk.js`](../evidence/interns_chunk.js), [`evidence/submissions_chunk.js`](../evidence/submissions_chunk.js)
+- `adminGetInterns` (`00162e117247af97...`): Retrieves registered intern roster.
+- `adminCreateIntern` (`40bbe4bc0e325f31...`): Creates intern profile.
+- `adminCreateTask` (`406f95b4b6209de5...`): Dispatches task deliverables.
+- `adminGetSubmissions` (`00c08cb87bdbc6bd...`): Fetches EOD submissions.
+- `adminUpdateSubmissionStatus` (`70e82d7f651d07f2...`): Updates single submission review state.
+- `adminBatchUpdateSubmissionStatus` (`70d909e95734c649...`): Batch updates multiple submissions.
+
+---
+
+### 4.3 Observable Architectural Limitations
+
+Based strictly on the public evidence above, several architectural limitations are evident in the current setup:
+1. **Coupling to Frontend Bundles**: Server Actions lack a language-agnostic OpenAPI contract, binding backend business operations tightly to Next.js client-side JavaScript.
+2. **Generic HTTP Status Masking**: Because Server Actions typically return HTTP 200 with `{ success: false }`, edge caches, monitoring systems, and client libraries cannot rely on standard HTTP semantics (`400 Bad Request`, `401 Unauthorized`, `429 Too Many Requests`).
+3. **Inversion of Identifier Authority**: As evidenced in `offer_letter_chunk.js`, primary document identifiers (`refNumber`) are generated in browser JavaScript rather than being authoritatively assigned by the server.
+4. **Coarse-Grained Authentication Input**: The login form submits only a single shared password without individual user identifiers, limiting identity auditing at the gateway layer.
+
+---
+
+### 4.4 Boundary: Observed Behavior vs. Proposed Target API Contracts
+
+> [!IMPORTANT]
+> **Definitive Assessment Boundary**:
+> - **Observed Behavior**: The descriptions above represent **empirical facts** extracted exclusively from publicly accessible client chunks (`_next/static/chunks/*.js`) and network response headers. No internal backend code, database tables, or serverless handler bodies were accessed.
+> - **Proposed Contracts**: The REST endpoints specified in [`06_API_SPECIFICATION.md`](06_API_SPECIFICATION.md) and implemented in the Spring Boot reference service represent an **independent remediation blueprint** proposing standard REST conventions, HTTP status codes, and server-side authority. They are not claims about Cynbit's internal backend architecture.
+
 

@@ -1,28 +1,64 @@
 # 05. Enterprise Backend Remediation Roadmap
 
-This document outlines practical, enterprise-grade engineering improvements to address the observations identified during the technical audit.
+This document outlines practical, evidence-grounded engineering remediations addressing the specific observations identified during the Cynbit Technologies backend technical audit.
 
 ---
 
-## 1. Remediation Matrix
+## 1. Architectural Relationship & Assessment Boundaries
 
-| Finding / Area | Immediate Remediation | Target Architectural State |
-| :--- | :--- | :--- |
-| **RSC UI Disclosure on 307 Redirects** | Enforce auth checks in Edge `middleware.ts` before component invocation. | Pre-render edge gatekeeper; unauthenticated requests are halted at the edge before any component executes. |
-| **Shared-Key Portal Login** | Migrate to individual user accounts with hashed credentials and JWT / Session tokens. | Granular Role-Based Access Control (RBAC) with audit trails: `SUPER_ADMIN`, `HR_ADMIN`, `MENTOR`, `INTERN`. |
-| **Weak Client Reference IDs** | Authoritative backend generation using CSPRNG or UUIDv7. | Server-generated, collision-resistant reference IDs (`CB/HR/OFFER/2026/[CSPRNG]`). |
-| **Missing HTTP Security Headers** | Configure edge response headers for CSP, X-Frame-Options, and nosniff. | Defense-in-depth header policy applied uniformly at the reverse proxy or Spring Security filter chain. |
-| **Wildcard CORS on HTML** | Restrict CORS to specific authorized origins and remove from HTML routes. | Principle of least privilege: CORS applied only to externalized REST/API endpoints with whitelisted domains. |
-| **Form Abuse & Flooding** | Implement IP-based Token Bucket rate limiting. | Distributed rate limiter (Bucket4j / Redis) enforcing rate tiers on `/contact` and `/careers`. |
-| **Client-Side PDF Generation** | Move document rendering and database logging to an authoritative backend service. | Server-side PDF compilation (OpenPDF / iText) with server-side validation and atomic persistence. |
-| **Apex Domain 307 Redirect** | Update Vercel project domain configuration to use 308 Permanent Redirect. | Cached canonical domain mapping avoiding redundant network round-trips. |
+> [!IMPORTANT]
+> **Independent Reference Implementation Notice**:
+> The Java 17 + Spring Boot 3 service in [`backend-remediation-service/`](../backend-remediation-service/) is an **independent, isolated reference architecture**. It does **not** alter, replace, or deploy to Cynbit's live production Next.js application or Vercel infrastructure.
+> 
+> **Persistence Implementation Status**:
+> To enable self-contained evaluation and automated testing without external dependencies, business entities in the reference service are managed via **thread-safe in-memory collections (`ConcurrentHashMap`)**. Complete production MySQL 8.0 DDL ([`schema.sql`](../backend-remediation-service/src/main/resources/schema.sql)) and a `mysql` profile are provided, but live JPA/Hibernate database persistence is **not** currently integrated.
 
 ---
 
-## 2. Detailed Technical Remediation Blueprints
+## 2. Evidence-Based Remediation Matrix
+
+Every recommendation directly corresponds to an empirical observation gathered from Cynbit's public infrastructure:
+
+| ID | Finding / Observable Area | Empirical Cynbit Evidence | Technical Reasoning & Risk | Expected Enterprise Benefit | Recommended Implementation Approach |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **REC-01** | **RSC UI Disclosure in 307 Redirects** | Streamed component template in 307 body on `portal.cynbit.in/dashboard` ([`evidence/portal_dashboard.html`](../evidence/portal_dashboard.html)). | Next.js executes redirect within component rendering tree, serializing internal tool descriptions into the HTTP response. | Completely prevents unauthenticated reconnaissance of internal admin tooling. | Enforce session check in Vercel Edge `middleware.ts` before component invocation. |
+| **REC-02** | **Observable Shared-Key Login** | Form in [`evidence/portal_chunk.js`](../evidence/portal_chunk.js) posts single `password` ("Security Key") to `loginToPortal`. | Shared secret prevents non-repudiation, individual employee auditing, and role segregation. | Individual accountability, single-user credential revocation, and fine-grained authorization. | Individual user accounts, BCrypt (factor 12), and role-based access control (`SUPER_ADMIN`, `HR_ADMIN`, `MENTOR`). |
+| **REC-03** | **Client-Side Reference Construction** | Suffix generated via `Math.random()` in [`evidence/offer_letter_chunk.js`](../evidence/offer_letter_chunk.js). | Keyspace of only 90,000 suffixes yields a 50% collision probability after ~354 documents (Birthday Paradox). Inverts entity authority. | Collision-resistant identifiers (> 10¹² combinations), cryptographic entropy, tamper-evident checksums. | Server-authoritative generation using `SecureRandom` + Crockford Base32, collision checks, and DB unique constraint. |
+| **REC-04** | **Missing Defense-in-Depth Headers** | Absence of CSP, X-Frame-Options, nosniff on `www.cynbit.in` and `portal.cynbit.in` ([`evidence/raw_headers_www.txt`](../evidence/raw_headers_www.txt)). | Missing headers leave the internal portal open to clickjacking framing and MIME confusion attacks. | Hardens browser client against UI redressing, clickjacking, and MIME sniffing. | Configure `Content-Security-Policy`, `X-Frame-Options: DENY`, and `X-Content-Type-Options: nosniff`. |
+| **REC-05** | **Wildcard CORS on HTML** | `Access-Control-Allow-Origin: *` returned on top-level HTML documents. | Overly permissive configuration that diverges from the principle of least privilege. | Eliminates unnecessary cross-origin exposure; restricts API communication to trusted domains. | Remove CORS from HTML routes; restrict API endpoints to explicit trusted origins (`cynbit.in`, `portal.cynbit.in`). |
+| **REC-06** | **Public Form Flooding & Resource Exhaustion** | Inquiries (`/contact`) and applications (`/careers/[slug]`) submit without CAPTCHA or rate limits. | Automated bot scripts can exhaust database storage and third-party email notification quotas. | Protects backend ingestion pipelines while ensuring seamless candidate applications. | IP-based Token Bucket rate limiter with positive capacity checks, trusted proxy resolution, and HTTP 429 `Retry-After`. |
+| **REC-07** | **Client-Side PDF Compilation** | `offer_letter_chunk.js` renders PDFs in browser memory via `jspdf` using local state. | Client-side compilation allows tampering with compensation or contract terms prior to export. | Authoritative legal contract generation matching server database records byte-for-byte. | Move PDF compilation to backend service with immutable SHA-256 payload checksums. |
+| **REC-08** | **Apex Domain 307 Redirection Overhead** | `https://cynbit.in/` redirects to `https://www.cynbit.in/` via HTTP 307 with `max-age=0` ([`evidence/cynbit_home.html`](../evidence/cynbit_home.html)). | Non-cacheable temporary redirect forces repeat visitors to execute an extra network round-trip. | Eliminates 100–200 ms latency overhead on repeat visits and consolidates SEO indexing. | Configure Vercel domain redirect to use HTTP `308 Permanent Redirect`. |
+
+---
+
+## 3. Implementation Status: Reference Service vs. Production Target
+
+To provide complete transparency regarding what has been constructed in the Spring Boot reference repository:
+
+```
+┌───────────────────────────────────────────────────────────┬───────────────────────────────────────────────────────────┐
+│       IMPLEMENTED IN REFERENCE REPOSITORY                 │        PROPOSED FOR FULL PRODUCTION ROLLOUT               │
+│       (backend-remediation-service)                       │        (Production Migration Roadmap)                     │
+├───────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────┤
+│ ✔ Server-authoritative DocumentReferenceService with      │ ⏳ Database-level unique constraint enforcement            │
+│   SecureRandom & Crockford Base32 (> 10¹² combinations)   │    (DDL ready in schema.sql; requires active MySQL instance)│
+│ ✔ In-memory collision retry loop (up to 5 retries)        │ ⏳ Transactional ACID persistence via Spring Data JPA      │
+│ ✔ Deterministic SHA-256 payload checksum computation      │ ⏳ Object-level authorization (ABAC candidate ownership)   │
+│ ✔ Server-side RBAC on document endpoints                  │ ⏳ Server-side PDF rendering (OpenPDF/iText integration)  │
+│ ✔ HttpOnly, Secure, SameSite=Strict cookie JWT auth       │ ⏳ Distributed Token Blacklist via Redis with TTL         │
+│ ✔ CSRF Protection with XSRF-TOKEN cookie & header         │ ⏳ Distributed multi-instance Rate Limiter via Redis       │
+│ ✔ Token Bucket rate limiting with trusted proxy check     │ ⏳ Automated Key Management via AWS/GCP Secret Manager    │
+│ ✔ RFC 7807 ProblemDetail error handling & DTO validation │ ⏳ Next.js Edge middleware.ts deployment to Vercel        │
+└───────────────────────────────────────────────────────────┴───────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 4. Technical Remediation Blueprints
 
 ### Blueprint 1: Pre-Render Edge Middleware Authorization Guard (Next.js)
-To prevent Next.js from streaming React Server Component payloads in redirect responses, access control checks must be executed in `middleware.ts` prior to component rendering:
+To prevent Next.js from streaming React Server Component payloads in redirect responses, access control checks must execute in `middleware.ts` before component rendering begins:
 
 ```typescript
 // middleware.ts (Next.js Edge Guard)
@@ -52,14 +88,14 @@ export const config = {
 
 ---
 
-### Blueprint 2: Cryptographically Secure Reference Generation (Spring Boot / Java)
-Primary business identifiers must be authoritative, tamper-resistant, and generated server-side:
+### Blueprint 2: Cryptographically Secure Document Reference Generation (Java 17)
+Primary business identifiers must be generated server-side using cryptographic pseudo-randomness:
 
 ```java
 @Service
 public class DocumentReferenceService {
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-    private static final String CHARSET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"; // Crockford Base32
+    private static final String CHARSET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"; // Crockford Base32 (32 chars)
 
     public String generateReferenceNumber(DocumentType type, int year) {
         StringBuilder suffix = new StringBuilder(8);
@@ -73,24 +109,28 @@ public class DocumentReferenceService {
 
 ---
 
-### Blueprint 3: Token Bucket Rate Limiting (Bucket4j)
-To protect public forms (`/contact` and `/careers`) against bot abuse without disrupting legitimate candidates:
+### Blueprint 3: Token Bucket Rate Limiting with Trusted Proxy IP Resolution
+Protects public forms against flooding while respecting reverse-proxy environments:
 
 ```java
 @Component
 public class RateLimiterService {
-    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
+    private final Set<String> trustedProxies;
+    private final Map<String, TokenBucket> buckets = new ConcurrentHashMap<>();
 
-    public Bucket resolveBucket(String clientIp, String endpoint) {
-        String key = clientIp + ":" + endpoint;
-        return buckets.computeIfAbsent(key, k -> createNewBucket(endpoint));
+    public RateLimiterService(RateLimitProperties properties) {
+        this.trustedProxies = new HashSet<>(properties.getTrustedProxies());
     }
 
-    private Bucket createNewBucket(String endpoint) {
-        Bandwidth limit = endpoint.contains("career") 
-            ? Bandwidth.classic(5, Refill.intervally(5, Duration.ofMinutes(15)))
-            : Bandwidth.classic(10, Refill.intervally(10, Duration.ofMinutes(5)));
-        return Bucket.builder().addLimit(limit).build();
+    public String resolveClientIp(HttpServletRequest request) {
+        String remoteAddr = request.getRemoteAddr();
+        if (trustedProxies.contains(remoteAddr)) {
+            String forwarded = request.getHeader("X-Forwarded-For");
+            if (forwarded != null && !forwarded.isBlank()) {
+                return forwarded.split(",")[0].trim();
+            }
+        }
+        return remoteAddr;
     }
 }
 ```
@@ -114,4 +154,3 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
         .build();
 }
 ```
-

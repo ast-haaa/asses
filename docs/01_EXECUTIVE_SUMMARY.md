@@ -43,8 +43,13 @@ The website operates on modern cloud infrastructure powered by **Vercel's Global
 ### 3. Concrete Remediation & Reference Architecture
 To demonstrate production-ready engineering standards, a modular reference backend has been engineered in **Java 17 + Spring Boot 3.3**:
 - Centralized Spring Security 6 filter chain with cryptographic token authentication and granular Role-Based Access Control (RBAC).
-- In-memory / distributed token bucket rate limiting using **Bucket4j**.
-- Cryptographically secure reference number generator utilizing CSPRNG.
-- Authoritative server-side document rendering and state logging.
-- Strict DTO whitelisting and RFC 7807 global exception handling.
+- Token bucket rate limiting with trusted proxy resolution and HTTP 429 Retry-After headers.
+- Cryptographically secure reference number generator utilizing CSPRNG (`SecureRandom`) with collision checking.
+- Authoritative server-side document reference allocation and SHA-256 payload checksums.
+- Strict DTO whitelisting and RFC 7807 global exception handling (`ProblemDetail`).
+
+> [!NOTE]
+> **Implementation Scope & Persistence Note**:
+> The Spring Boot service operates as an independent architectural reference implementation. For self-contained testing and evaluation, business records are maintained in thread-safe in-memory collections (`ConcurrentHashMap`). Complete production MySQL 8.0 DDL (`schema.sql`) and configuration profiles are provided for future database deployment.
+
 

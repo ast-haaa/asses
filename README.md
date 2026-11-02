@@ -13,11 +13,11 @@
 
 This repository constitutes the complete technical deliverable for the **Backend Developer Intern Technical Assessment** for **Cynbit Technologies Private Limited** (Jaipur, Rajasthan, India).
 
-The objective was to conduct an objective, non-intrusive backend technical audit of the company's publicly observable web infrastructure ([https://www.cynbit.in/](https://www.cynbit.in/) and [https://portal.cynbit.in/](https://portal.cynbit.in/)), document empirical evidence for all findings, distinguish verified facts from potential risks, and engineer a production-ready **Java 17 + Spring Boot 3** reference backend demonstrating enterprise-grade remediations.
+The objective was to conduct an objective, non-intrusive backend technical audit of the company's publicly observable web infrastructure ([https://www.cynbit.in/](https://www.cynbit.in/) and [https://portal.cynbit.in/](https://portal.cynbit.in/)), document empirical evidence for all findings, distinguish verified facts from potential risks, and engineer an independent **Java 17 + Spring Boot 3** reference backend demonstrating enterprise-grade remediations.
 
 ### Strict Assessment Guardrails
 - **Passive & Read-Only**: Zero active exploitation, fuzzing, brute forcing, or state-altering requests.
-- **Strict Separation**: The reference remediation service is an independent, isolated engineering blueprint. It does not interact with Cynbit's live production database.
+- **Strict Separation & Independent Architecture**: The reference remediation service is an independent, isolated engineering blueprint. It does not modify, deploy to, or interact with Cynbit's live production Next.js application or database.
 - **Evidence-Based Reporting**: No assumptions about backend database schemas or server-side authorization were made without verifiable HTTP or client-bundle proof.
 
 ---
@@ -147,17 +147,25 @@ mvn package -DskipTests
 
 ### Running the Application
 
-Because the service enforces strict secrets externalization without hardcoded fallbacks, `JWT_SECRET` must be supplied via an environment variable with at least 32 bytes (256 bits) of entropy:
+The remediation service enforces strict secrets externalization without any hardcoded fallback secret in `application.yml` or the codebase. If `JWT_SECRET` is omitted or contains fewer than 32 bytes (256 bits) of entropy, the application aborts startup immediately with an `IllegalArgumentException`.
+
+Generate a local, cryptographically random secret and launch the service:
 
 **Windows PowerShell**:
 ```powershell
-$env:JWT_SECRET = "cynbit-enterprise-secret-key-with-sufficient-entropy-for-hmac-sha256-production-2026"
+# Generate a cryptographically random 256-bit (32-byte) Base64 secret locally
+$bytes = New-Object byte[] 32; [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes); $env:JWT_SECRET = [Convert]::ToBase64String($bytes)
+
+# Launch the standalone Spring Boot JAR
 java -jar target/cynbit-backend-remediation-1.0.0.jar
 ```
 
 **Linux / macOS (Bash)**:
 ```bash
-export JWT_SECRET="cynbit-enterprise-secret-key-with-sufficient-entropy-for-hmac-sha256-production-2026"
+# Generate a cryptographically random 256-bit Base64 secret locally
+export JWT_SECRET=$(openssl rand -base64 32)
+
+# Launch the standalone Spring Boot JAR
 java -jar target/cynbit-backend-remediation-1.0.0.jar
 ```
 
@@ -182,8 +190,9 @@ java -jar target/cynbit-backend-remediation-1.0.0.jar
    });
    ```
 
-### Architectural Disclaimers & Production Migration
-- **Persistence Status**: The application currently runs using thread-safe in-memory collections (`ConcurrentHashMap`) for standalone evaluation. It does NOT maintain a live connection to a running MySQL instance by default. A complete production-ready DDL script is provided in [`schema.sql`](backend-remediation-service/src/main/resources/schema.sql) and can be activated via `--spring.profiles.active=mysql` once a MySQL 8.0+ server is provisioned.
+### Architectural Disclaimers & Implementation Status
+- **Independent Architecture**: The Spring Boot service (`backend-remediation-service`) is an independent reference architecture, NOT a modification, fork, or live deployment of Cynbit's Next.js infrastructure.
+- **Persistence Status**: The application currently evaluates using thread-safe in-memory collections (`ConcurrentHashMap`) for standalone evaluation. It does NOT maintain a live connection to a running MySQL instance by default. A complete production-ready DDL script is provided in [`schema.sql`](backend-remediation-service/src/main/resources/schema.sql) and can be activated via `--spring.profiles.active=mysql` once a MySQL 8.0+ server is provisioned. Live Spring Data JPA repositories are not currently integrated.
 - **Token Blacklist Scope**: Token revocation operates via an in-memory `TokenBlacklistService`. Blacklisted tokens are evicted naturally at expiration or cleared upon application restart. In a distributed multi-instance deployment, replace this with a shared Redis store with TTL eviction.
 - **Rate Limiter Scope**: In-memory token buckets track client IPs per JVM instance. For clustered deployments behind load balancers, replace in-memory buckets with Redis (`Bucket4j-redis` or `Redisson`).
 

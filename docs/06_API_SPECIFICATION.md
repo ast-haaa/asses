@@ -1,6 +1,10 @@
-# 06. Target API Specification (OpenAPI / REST Equivalent)
+# 06. Target API Specification (Remediation Reference Contract)
 
-This specification defines a standard, RESTful API architecture replacing ad-hoc RPC Server Actions with structured, versioned, and documented HTTP endpoints.
+> [!NOTE]
+> **Proposed Architectural Contract**:
+> This document specifies a proposed, enterprise-grade RESTful API architecture designed for the Java 17 + Spring Boot 3 reference remediation service (`backend-remediation-service`). It translates the publicly observable Next.js Server Action RPC interactions (documented in [`02_ARCHITECTURE_AUDIT.md`](02_ARCHITECTURE_AUDIT.md)) into standardized, versioned HTTP endpoints adhering to REST conventions, RFC 7807 error handling, and server-side state enforcement.
+> 
+> This is an **independent remediation contract**, not an assertion or extraction of internal private endpoints from Cynbit's production backend.
 
 ---
 

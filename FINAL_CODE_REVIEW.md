@@ -106,21 +106,22 @@ This review provides a strict, evidence-based evaluation of the Java 17 + Spring
 ### Criterion 8: Cryptographic Document Reference Generation & Collision Handling
 * **Code Location**: [`DocumentReferenceService.java`](backend-remediation-service/src/main/java/com/cynbit/remediation/service/DocumentReferenceService.java) & [`ApplicationService.java`](backend-remediation-service/src/main/java/com/cynbit/remediation/service/ApplicationService.java)
 * **Analysis**:
-  - Replaces client-side `Math.random()` ($90,000$ combinations) with server-side `SecureRandom` across Crockford Base32 charset ($40\text{ bits}$ entropy, $> 10^{12}$ combinations).
+  - Replaces client-side `Math.random()` ($90,000$ combinations, $50\%$ collision probability after $\approx 354$ documents via Birthday Paradox) with server-authoritative `SecureRandom` across Crockford Base32 charset ($40\text{ bits}$ entropy, $> 10^{12}$ combinations).
   - Canonical format: `CB/HR/{INT|OFFER}/{YEAR}/{CSPRNG_SUFFIX}`.
-  - Collision retry loop (up to 5 attempts) verifies uniqueness before storing.
-  - Deterministic SHA-256 payload checksum calculation.
-* **Verdict**: **PASSED**
+  - **Implemented in Prototype**: Server-side generation, in-memory collision check retry loop (up to 5 attempts), deterministic SHA-256 payload checksum calculation, and server-side RBAC (`ROLE_HR_ADMIN`, `ROLE_SUPER_ADMIN`).
+  - **Proposed for Production**: Database storage-engine uniqueness constraint (`UNIQUE KEY uq_reference_number`), `@Transactional` ACID persistence, and object-level authorization (ABAC).
+* **Verdict**: **PASSED (Reference Implementation with Documented Production Targets)**
 
 ---
 
 ### Criterion 9: Data Persistence Model (In-Memory Prototype vs RDBMS)
 * **Code Location**: [`schema.sql`](backend-remediation-service/src/main/resources/schema.sql) & [`application.yml`](backend-remediation-service/src/main/resources/application.yml)
 * **Analysis**:
-  - Inquiries, applications, and documents are stored in thread-safe `ConcurrentHashMap` collections for self-contained local evaluation.
+  - Inquiries, applications, and documents are stored in thread-safe `ConcurrentHashMap` collections for self-contained local evaluation without requiring external database dependencies.
   - Production MySQL DDL script (`src/main/resources/schema.sql`) provides full schema with InnoDB engine, foreign keys, unique constraint on `(email, job_id)`, and indexing.
   - Configured with `mysql` Spring profile (`--spring.profiles.active=mysql`).
-* **Verdict**: **VERIFIED AS IN-MEMORY REFERENCE WITH COMPLETE RDBMS DDL**
+  - **Important Disclosure**: Active Spring Data JPA repositories and live database connections are NOT currently integrated into the reference service.
+* **Verdict**: **VERIFIED AS IN-MEMORY REFERENCE WITH COMPLETE RDBMS DDL (NOT LIVE JPA)**
 
 ---
 
@@ -171,17 +172,17 @@ This review provides a strict, evidence-based evaluation of the Java 17 + Spring
 [INFO]  T E S T S
 [INFO] -------------------------------------------------------
 [INFO] Running com.cynbit.remediation.config.RateLimiterConcurrencyTest
-[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.584 s
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.948 s
 [INFO] Running com.cynbit.remediation.controller.AuthControllerTest
-[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.355 s
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 15.00 s
 [INFO] Running com.cynbit.remediation.controller.CareerControllerTest
-[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.119 s
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.109 s
 [INFO] Running com.cynbit.remediation.controller.InquiryControllerTest
-[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.043 s
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.044 s
 [INFO] Running com.cynbit.remediation.security.JwtTokenProviderTest
-[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.027 s
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.030 s
 [INFO] Running com.cynbit.remediation.service.DocumentReferenceServiceTest
-[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.179 s
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.184 s
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -190,8 +191,8 @@ This review provides a strict, evidence-based evaluation of the Java 17 + Spring
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time:  15.663 s
-[INFO] Finished at: 2026-11-01T12:59:30+05:30
+[INFO] Total time:  29.252 s
+[INFO] Finished at: 2026-11-02T21:17:17+05:30
 [INFO] ------------------------------------------------------------------------
 ```
 
@@ -203,8 +204,8 @@ This review provides a strict, evidence-based evaluation of the Java 17 + Spring
 [INFO] Replacing main artifact with repackaged archive.
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
-[INFO] Total time:  5.417 s
-[INFO] Finished at: 2026-11-01T12:59:49+05:30
+[INFO] Total time:  10.627 s
+[INFO] Finished at: 2026-11-02T21:17:42+05:30
 [INFO] ------------------------------------------------------------------------
 ```
 - **Executable Output**: `backend-remediation-service/target/cynbit-backend-remediation-1.0.0.jar` (Self-contained executable Spring Boot archive with embedded Tomcat).
