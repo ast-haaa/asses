@@ -211,7 +211,7 @@ java -jar target/cynbit-backend-remediation-1.0.0.jar
 4. [04. Performance Analysis](docs/04_PERFORMANCE_ANALYSIS.md) — Measured network latency, TLS timing, and caching telemetry.
 5. [05. Remediation Roadmap](docs/05_REMEDIATION_ROADMAP.md) — Implementation blueprints for edge guards, CSP, and RBAC.
 6. [06. Target API Specification](docs/06_API_SPECIFICATION.md) — Standard RESTful OpenAPI contract for all operations.
-7. [Raw Evidence Directory](evidence/) — Raw HTTP headers, captured payloads, and inspection scripts.
+7. [Sanitized Evidence Directory](evidence/) — Sanitized evidence log ([`EVIDENCE_LOG.md`](evidence/EVIDENCE_LOG.md)), raw HTTP headers, and offline analysis scripts.
 
 ---
 

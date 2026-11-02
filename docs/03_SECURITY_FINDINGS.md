@@ -60,7 +60,7 @@ href: \"/portal/dashboard/interns/submissions\"
 
 ### Finding 1.2: Client-Side Document Reference Construction with Standard Pseudo-Randomness
 - **Classification**: Architectural & Cryptographic Design Defect (Medium)
-- **Target Location**: `https://portal.cynbit.in/dashboard/offer-letter` (Source Chunk: [`evidence/offer_letter_chunk.js`](../evidence/offer_letter_chunk.js))
+- **Target Location**: `https://portal.cynbit.in/dashboard/offer-letter` (Documented in [`evidence/EVIDENCE_LOG.md § 2`](../evidence/EVIDENCE_LOG.md#2-client-side-document-reference-construction))
 - **Confidence**: 100% (Empirically verified in public client bundle)
 
 #### Empirical Code Extraction
